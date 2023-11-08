@@ -1,6 +1,7 @@
 # Large Scale Distributed Systems
 
 This repository holds the code for SDLE's course project.
+Both the [source code](C2/src/) used and any necessary [reports](C2/docs/) are present in the C2 folder.
 
 ## Members
 

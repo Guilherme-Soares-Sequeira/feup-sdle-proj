@@ -18,7 +18,7 @@ public class ConsistentHasherSerializer extends StdSerializer<ConsistentHasher> 
     @Override
     public void serialize(ConsistentHasher value, JsonGenerator gen, SerializerProvider provider) throws IOException {
         gen.writeStartObject();
-        gen.writeNumberField("timestamp", value.getTimestamp());
-        gen.writeObjectField("servers_tokens", value.getServerToNumberOfVirtualNodes());
+        gen.writeNumberField(SerializingConstants.TIMESTAMP_KEY, value.getTimestamp());
+        gen.writeObjectField(SerializingConstants.NUMBER_VIRTUAL_NODES_MAPPING, value.getServerToNumberOfVirtualNodes());
     }
 }

@@ -29,6 +29,11 @@ public class ConsistentHasher  {
     private final MessageDigest md;
     private final ObjectMapper jsonMapper;
 
+    public static ConsistentHasher fromJSON(String json) throws JsonProcessingException {
+        ObjectMapper jsonMapper = new ObjectMapper();
+        return jsonMapper.readValue(json, ConsistentHasher.class);
+    }
+
     public ConsistentHasher(long timestamp) throws NoSuchAlgorithmException {
         this.jsonMapper = new ObjectMapper();
         this.ring = new TreeMap<>();
@@ -37,7 +42,7 @@ public class ConsistentHasher  {
         this.serverToNumberOfVirtualNodes = new HashMap<String, Integer>();
     }
 
-    public ConsistentHasher(List<Pair<String , Integer>> servers, long timestamp) throws NoSuchAlgorithmException {
+    public ConsistentHasher(long timestamp, List<Pair<String , Integer>> servers) throws NoSuchAlgorithmException {
         this.jsonMapper = new ObjectMapper();
         this.ring = new TreeMap<>();
         this.timestamp = timestamp;
@@ -48,7 +53,7 @@ public class ConsistentHasher  {
         }
     }
 
-    public ConsistentHasher(Map<String, Integer> servers, long timestamp) throws NoSuchAlgorithmException {
+    public ConsistentHasher(long timestamp, Map<String, Integer> servers) throws NoSuchAlgorithmException {
         this.jsonMapper = new ObjectMapper();
         this.ring = new TreeMap<>();
         this.md = MessageDigest.getInstance("MD5");
@@ -189,6 +194,29 @@ public class ConsistentHasher  {
 
     public int getNumberOfVirtualNodes() {
         return this.ring.size();
+    }
+
+    /** Note: If we have time, this should be implemented using Merkel Trees.
+     * Checks if this ConsistentHasher is equivalent to another, that is, they have the exact same entries
+     * (same token maps to the same server, number of entries is equal).
+     *
+     * @param other Object to compare with
+     * @return true if they are equivalent, false otherwise
+     */
+    public boolean isEquivalent(ConsistentHasher other) {
+        if (this.getNumberOfServers() != other.getNumberOfServers() || this.getNumberOfVirtualNodes() != other.getNumberOfVirtualNodes()) {
+            return false;
+        }
+
+        for (var entry : this.ring.entrySet()) {
+            long token = entry.getKey();
+            String serverName = entry.getValue();
+            if (! (other.ring.get(token).equals(serverName))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
 }

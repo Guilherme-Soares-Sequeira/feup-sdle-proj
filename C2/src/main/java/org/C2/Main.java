@@ -1,7 +1,14 @@
 package org.C2;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.C2.cloud.ConsistentHasher;
 import org.C2.cloud.database.MongoDB;
 import org.bson.Document;
+
+import java.security.NoSuchAlgorithmException;
+import java.text.MessageFormat;
+import static java.text.MessageFormat.format;
+import java.time.Instant;
 
 public class Main {
     public static void main(String[] args) {
@@ -23,5 +30,6 @@ public class Main {
         System.out.println(retrieved);
 
         db.close();
+
     }
 }

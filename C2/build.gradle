@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group = 'org.C2'
@@ -10,9 +11,15 @@ repositories {
 }
 
 dependencies {
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.16.0'
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     implementation group: 'org.automerge', name: 'automerge', version: "0.0.4"
+    implementation group: 'org.mongodb', name: 'mongo-java-driver', version: '3.12.14'
+}
+
+application {
+    mainClassName = 'org.C2.Main'
 }
 
 test {

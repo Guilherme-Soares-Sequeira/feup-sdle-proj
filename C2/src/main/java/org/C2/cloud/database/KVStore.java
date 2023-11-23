@@ -6,6 +6,10 @@ import org.json.JSONTokener;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -19,10 +23,10 @@ public class KVStore {
     public KVStore(String directory) {
         this.directory = directory;
         this.logger = Logger.getLogger(KVStore.class.getName());
-        this.setupLogger();
+        this.logsetup();
     }
 
-    private void setupLogger() {
+    private void logsetup() {
         try {
             FileHandler filehandler = new FileHandler("kvstore.log", true);
             filehandler.setFormatter(new SimpleFormatter());
@@ -31,8 +35,21 @@ public class KVStore {
         } catch (IOException ignored) {}
     }
 
-    public Optional<JSONObject> get(String key) {
-        String filepath = this.directory + File.separator + key;
+    public void mksv(String server) {
+        String svdir = this.directory + File.separator + server;
+
+        try {
+            Path path = Paths.get(svdir);
+            Files.createDirectory(path);
+        } catch (FileAlreadyExistsException e) {
+            this.logger.log(Level.INFO, "Server already exists", e);
+        } catch (IOException e) {
+            this.logger.log(Level.SEVERE, "Error creating server: " + svdir, e);
+        }
+    }
+
+    public Optional<String> get(String key) {
+        String filepath = this.directory + File.separator + key + ".json";
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filepath, StandardCharsets.UTF_8))) {
             StringBuilder content = new StringBuilder();
@@ -42,17 +59,16 @@ public class KVStore {
                 content.append(line);
             }
 
-            return Optional.of(new JSONObject(new JSONTokener(content.toString())));
+            return Optional.of(content.toString());
         } catch (IOException | JSONException e) {
             this.logger.log(Level.SEVERE, "Error while reading file: " + filepath, e);
 
             return Optional.empty();
         }
-
     }
 
     public void put(String key, String contents) {
-        String filepath = this.directory + File.separator + key;
+        String filepath = this.directory + File.separator + key + ".json";
 
         try (FileWriter writer = new FileWriter(filepath, StandardCharsets.UTF_8)) {
             writer.write(contents);

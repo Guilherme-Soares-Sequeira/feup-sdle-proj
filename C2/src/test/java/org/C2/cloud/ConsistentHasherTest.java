@@ -1,14 +1,11 @@
 package org.C2.cloud;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.C2.cloud.serializing.ConsistentHasherSerializer;
 import org.C2.cloud.serializing.SerializingConstants;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -20,11 +17,7 @@ public class ConsistentHasherTest {
 
     @BeforeEach
     public void instantiateConsistentHasher() {
-        try {
-            consistentHasher = new ConsistentHasher(1000);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(format("Failed to instantiate ConsistentHasher: {0}", e));
-        }
+        consistentHasher = new ConsistentHasher(1000);
     }
 
     @Test
@@ -79,6 +72,7 @@ public class ConsistentHasherTest {
         consistentHasher.addServer("ServerB", 1);
 
         Assertions.assertEquals("ServerB", consistentHasher.getServer("ServerA0", false));
+        Assertions.assertEquals("ServerA", consistentHasher.getServer("ServerB0", false));
     }
 
     @Test
@@ -119,7 +113,7 @@ public class ConsistentHasherTest {
     public void deserialization() {
         String json = "{" +
                 format("\"{0}\": 755,", SerializingConstants.TIMESTAMP_KEY) +
-                format("\"{0}\": ",SerializingConstants.NUMBER_VIRTUAL_NODES_MAPPING) + "{" +
+                format("\"{0}\": ", SerializingConstants.NUMBER_VIRTUAL_NODES_MAPPING) + "{" +
                 "\"ServerA\": 1," +
                 "\"ServerB\": 3" +
                 "}" +
@@ -127,7 +121,7 @@ public class ConsistentHasherTest {
 
         String noServersJson = "{" +
                 format("\"{0}\": 755,", SerializingConstants.TIMESTAMP_KEY) +
-                format("\"{0}\": ",SerializingConstants.NUMBER_VIRTUAL_NODES_MAPPING) + "{" +
+                format("\"{0}\": ", SerializingConstants.NUMBER_VIRTUAL_NODES_MAPPING) + "{" +
                 "}" +
                 "}";
 
@@ -154,30 +148,26 @@ public class ConsistentHasherTest {
     @Test
     public void equivalent() {
         consistentHasher.addServer("ServerA", 1);
-        try {
-            ConsistentHasher other = new ConsistentHasher(1000);
-            Assertions.assertFalse(consistentHasher.isEquivalent(other));
-            Assertions.assertFalse(other.isEquivalent(consistentHasher));
+        ConsistentHasher other = new ConsistentHasher(1000);
+        Assertions.assertFalse(consistentHasher.isEquivalent(other));
+        Assertions.assertFalse(other.isEquivalent(consistentHasher));
 
-            other.addServer("ServerA", 1);
-            Assertions.assertTrue(consistentHasher.isEquivalent(other));
-            Assertions.assertTrue(other.isEquivalent(consistentHasher));
+        other.addServer("ServerA", 1);
+        Assertions.assertTrue(consistentHasher.isEquivalent(other));
+        Assertions.assertTrue(other.isEquivalent(consistentHasher));
 
-            consistentHasher.addServer("ServerB", 2);
-            Assertions.assertFalse(consistentHasher.isEquivalent(other));
-            Assertions.assertFalse(other.isEquivalent(consistentHasher));
+        consistentHasher.addServer("ServerB", 2);
+        Assertions.assertFalse(consistentHasher.isEquivalent(other));
+        Assertions.assertFalse(other.isEquivalent(consistentHasher));
 
-            other.addServer("ServerB", 2);
-            Assertions.assertTrue(consistentHasher.isEquivalent(other));
-            Assertions.assertTrue(other.isEquivalent(consistentHasher));
+        other.addServer("ServerB", 2);
+        Assertions.assertTrue(consistentHasher.isEquivalent(other));
+        Assertions.assertTrue(other.isEquivalent(consistentHasher));
 
-            consistentHasher.addServer("ServerC", 3);
-            other.addServer("ServerC", 2);
-            Assertions.assertFalse(consistentHasher.isEquivalent(other));
-            Assertions.assertFalse(other.isEquivalent(consistentHasher));
-        } catch (NoSuchAlgorithmException e ){
-            throw new RuntimeException(format("Could not instantiate other ConsistentHasher {0}", e));
-        }
+        consistentHasher.addServer("ServerC", 3);
+        other.addServer("ServerC", 2);
+        Assertions.assertFalse(consistentHasher.isEquivalent(other));
+        Assertions.assertFalse(other.isEquivalent(consistentHasher));
     }
 
     @Test

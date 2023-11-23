@@ -1,12 +1,9 @@
 package org.C2.cloud.database;
 
 import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -18,34 +15,26 @@ import java.util.logging.SimpleFormatter;
 
 public class KVStore {
     private final String directory;
-    private final Logger logger;
+    private final boolean logging;
+    private Logger logger;
 
-    public KVStore(String directory) {
+    public KVStore(String directory, boolean logging) {
         this.directory = directory;
-        this.logger = Logger.getLogger(KVStore.class.getName());
-        this.logsetup();
+        this.logging = logging;
+
+        if (this.logging) {
+            this.logger = Logger.getLogger(KVStore.class.getName());
+            this.setuplog();
+        }
     }
 
-    private void logsetup() {
+    private void setuplog() {
         try {
             FileHandler filehandler = new FileHandler("kvstore.log", true);
             filehandler.setFormatter(new SimpleFormatter());
 
             this.logger.addHandler(filehandler);
         } catch (IOException ignored) {}
-    }
-
-    public void mksv(String server) {
-        String svdir = this.directory + File.separator + server;
-
-        try {
-            Path path = Paths.get(svdir);
-            Files.createDirectory(path);
-        } catch (FileAlreadyExistsException e) {
-            this.logger.log(Level.INFO, "Server already exists", e);
-        } catch (IOException e) {
-            this.logger.log(Level.SEVERE, "Error creating server: " + svdir, e);
-        }
     }
 
     public Optional<String> get(String key) {
@@ -61,19 +50,31 @@ public class KVStore {
 
             return Optional.of(content.toString());
         } catch (IOException | JSONException e) {
-            this.logger.log(Level.SEVERE, "Error while reading file: " + filepath, e);
+            if (this.logging) {
+                this.logger.log(Level.SEVERE, "Error while reading file: " + filepath, e);
+            }
 
             return Optional.empty();
         }
     }
 
-    public void put(String key, String contents) {
+    public void put(String server, String key, String contents) {
+        String svdir = this.directory + File.separator + server;
         String filepath = this.directory + File.separator + key + ".json";
 
-        try (FileWriter writer = new FileWriter(filepath, StandardCharsets.UTF_8)) {
-            writer.write(contents);
+        try {
+            Path serverPath = Paths.get(svdir);
+            if (!Files.exists(serverPath)) {
+                Files.createDirectories(serverPath);
+            }
+
+            try (FileWriter writer = new FileWriter(filepath, StandardCharsets.UTF_8)) {
+                writer.write(contents);
+            }
         } catch (IOException e) {
-            this.logger.log(Level.SEVERE, "Error while writing to file: " + filepath, e);
+            if (this.logging) {
+                this.logger.log(Level.SEVERE, "Error while writing to file: " + filepath, e);
+            }
         }
     }
 }

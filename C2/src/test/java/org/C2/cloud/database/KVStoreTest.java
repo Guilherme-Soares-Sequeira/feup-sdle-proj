@@ -14,21 +14,21 @@ import java.util.Optional;
 
 public class KVStoreTest {
     private static final String KV_STORE_TEST_DIR = "src/test/kvstore";
+    private static final String TEST_SERVER = "A";
     private static final String TEST_KEY = "key";
     private static final String TEST_CONTENTS = "contents";
     private KVStore kvstore;
 
     @BeforeEach
     public void setup() throws IOException {
-        this.kvstore = new KVStore(KV_STORE_TEST_DIR);
+        this.kvstore = new KVStore(KV_STORE_TEST_DIR, false);
 
-        Files.createDirectories(Paths.get(KV_STORE_TEST_DIR));
+        Files.createDirectories(Paths.get(KV_STORE_TEST_DIR, TEST_SERVER));
     }
 
     @AfterEach
     public void reset() throws IOException {
         Files.walk(Paths.get(KV_STORE_TEST_DIR))
-                .filter(Files::isRegularFile)
                 .map(Path::toFile)
                 .forEach(File::delete);
         Files.deleteIfExists(Paths.get(KV_STORE_TEST_DIR));
@@ -36,7 +36,7 @@ public class KVStoreTest {
 
     @Test
     public void testPutAndGet() {
-        this.kvstore.put(TEST_KEY, TEST_CONTENTS);
+        this.kvstore.put(TEST_SERVER, TEST_KEY, TEST_CONTENTS);
 
         Optional<String> result = this.kvstore.get(TEST_KEY);
 
@@ -46,8 +46,8 @@ public class KVStoreTest {
 
     @Test
     public void testPutOverwrite() {
-        this.kvstore.put(TEST_KEY, "before");
-        this.kvstore.put(TEST_KEY, "after");
+        this.kvstore.put(TEST_SERVER, TEST_KEY, "before");
+        this.kvstore.put(TEST_SERVER, TEST_KEY, "after");
 
         Optional<String> result = this.kvstore.get(TEST_KEY);
 

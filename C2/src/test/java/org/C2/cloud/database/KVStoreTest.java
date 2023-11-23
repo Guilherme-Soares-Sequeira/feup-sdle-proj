@@ -1,68 +1,64 @@
 package org.C2.cloud.database;
 
-import org.json.JSONObject;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 public class KVStoreTest {
-
+    private static final String KV_STORE_TEST_DIR = "src/test/kvstore";
+    private static final String TEST_KEY = "key";
+    private static final String TEST_CONTENTS = "contents";
     private KVStore kvstore;
 
     @BeforeEach
-    public void initKVStore() {
-        String kvdir = "src/test/kvstore";
-        this.kvstore = new KVStore(kvdir);
+    public void setup() throws IOException {
+        this.kvstore = new KVStore(KV_STORE_TEST_DIR);
+
+        Files.createDirectories(Paths.get(KV_STORE_TEST_DIR));
+    }
+
+    @AfterEach
+    public void reset() throws IOException {
+        Files.walk(Paths.get(KV_STORE_TEST_DIR))
+                .filter(Files::isRegularFile)
+                .map(Path::toFile)
+                .forEach(File::delete);
+        Files.deleteIfExists(Paths.get(KV_STORE_TEST_DIR));
     }
 
     @Test
-    public void testKVGetKeyExists() {
-        String validKey = "1";
+    public void testPutAndGet() {
+        this.kvstore.put(TEST_KEY, TEST_CONTENTS);
 
-        Optional<String> validJSON = this.kvstore.get(validKey);
+        Optional<String> result = this.kvstore.get(TEST_KEY);
 
-        Assertions.assertFalse(validJSON.isEmpty());
-        Assertions.assertEquals(validJSON.get(), "before");
+        Assertions.assertTrue(result.isPresent());
+        Assertions.assertEquals(TEST_CONTENTS, result.get());
     }
 
     @Test
-    public void testKVGetKeyNotExists() {
-        String invalidKey = "2";
+    public void testPutOverwrite() {
+        this.kvstore.put(TEST_KEY, "before");
+        this.kvstore.put(TEST_KEY, "after");
 
-        Optional<String> invalidJSON = this.kvstore.get(invalidKey);
+        Optional<String> result = this.kvstore.get(TEST_KEY);
 
-        Assertions.assertTrue(invalidJSON.isEmpty());
+        Assertions.assertTrue(result.isPresent());
+        Assertions.assertEquals("after", result.get());
     }
 
     @Test
-    public void testKVPutKeyExists() {
-        String validKey = "1";
-        String newContent = "new content";
+    public void testInvalidGet() {
+        Optional<String> result = this.kvstore.get("bad key");
 
-        Optional<String> current = this.kvstore.get(validKey);
-
-        Assertions.assertFalse(current.isEmpty());
-
-        this.kvstore.put(validKey, newContent);
-
-        Optional<String> updated = this.kvstore.get(validKey);
-
-        Assertions.assertFalse(updated.isEmpty());
-        Assertions.assertEquals(updated.get(), newContent);
-    }
-
-    @Test
-    public void testKVPutKeyNotExists() {
-        String invalidKey = "3";
-        String content = "content";
-
-        this.kvstore.put(invalidKey, content);
-
-        Optional<String> justInsertedContent = this.kvstore.get(invalidKey);
-
-        Assertions.assertFalse(justInsertedContent.isEmpty());
-        Assertions.assertEquals(justInsertedContent.get(), content);
+        Assertions.assertTrue(result.isEmpty());
     }
 }

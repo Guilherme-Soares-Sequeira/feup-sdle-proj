@@ -301,24 +301,24 @@ public class ConsistentHasher  {
     }
 
     /**
-     *
-     * @return
+     * Getter for the One Ring.
+     * @return This ConsistentHasher's Ring.
      */
     public TreeMap<Long, String> getRing() {
         return this.ring;
     }
 
     /**
-     *
-     * @return
+     * Getter for the number of servers registered (NOT virtual nodes).
+     * @return Number of servers registered.
      */
     public int getNumberOfServers() {
         return this.serverToNumberOfVirtualNodes.size();
     }
 
     /**
-     *
-     * @return
+     * Getter for number of registered virtual nodes.
+     * @return Number of registered virtual nodes.
      */
     public int getNumberOfVirtualNodes() {
         return this.ring.size();

@@ -3,70 +3,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class OrMap<N, V, K extends String> {
-    private Map<N, V> m = new HashMap<>();
-    private DotContext<K> cbase = new DotContext<>();
-    private DotContext<K> c;
-    private K id;
+    Map<K, V> map;
+    OrMap<N, V, K> orMap;
 
-    public OrMap() {
-        this.c = cbase.copy();
-    }
-
-    public OrMap(K i) {
-        this.id = i;
-        this.c = cbase;
-    }
-
-    public OrMap(K i, DotContext<K> jointc) {
-        this.id = i;
-        this.c = jointc;
-    }
-
-    public DotContext<K> getContext() {
-        return c;
-    }
-
-    public V get(N n) {
-        return m.get(n);
-    }
-
-    public void set(N n, V v) {
-        m.put(n, v);
-    }
-
-
-
-
-    public void join(OrMap<N, V, K> o) {
-        DotContext<K> ic = c.copy(); // Creating a copy of the context
-
-        for (Map.Entry<N, V> entry : m.entrySet()) {
-            N key = entry.getKey();
-            V value = entry.getValue();
-            /*
-            if (!o.m.containsKey(key)) {
-                V empty = new V(id, o.getContext());
-                value.join(empty);
-                c = ic.copy();
-            } else {
-                V otherValue = o.m.get(key);
-                value.join(otherValue);
-                c = ic.copy();
-            }*/
-        }
-
-        for (Map.Entry<N, V> entry : o.m.entrySet()) {
-            N key = entry.getKey();
-            V value = entry.getValue();
-    /*
-            if (!m.containsKey(key)) {
-                V empty = new V(o.id, c);
-                empty.join(value);
-                c = ic.copy();
-                m.put(key, empty);
-            }*/
-        }
-
-        c.join(o.c);
-    }
 }

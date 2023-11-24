@@ -1,15 +1,10 @@
 package org.C2;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.C2.cloud.ConsistentHasher;
-import org.C2.cloud.database.MongoDB;
-import org.bson.Document;
+import org.C2.crdts.OrSet;
 import org.C2.crdts.PNCounter;
+import org.C2.crdts.OrMap;
 
-import java.security.NoSuchAlgorithmException;
-import java.text.MessageFormat;
-import static java.text.MessageFormat.format;
-import java.time.Instant;
+import java.util.HashMap;
 
 public class Main {
     public static void main(String[] args) {
@@ -59,7 +54,22 @@ public class Main {
 
         System.out.println("Counter value: " + counter.value());
 
+        // test ORMap
+        OrMap<String, String, String> orMap1 = new OrMap<>();
+        OrMap<String, String, String> orMap2 = new OrMap<>();
 
+        orMap1.add("paint", "blue");
+        orMap1.add("sound", "loud");
+        orMap1.add("sound", "soft");
+        orMap2.add("paint", "red");
+        orMap2.add("number", "42");
+
+        System.out.println("orMap1: " + orMap1.getOrMap());
+        System.out.println("orMap2: " + orMap2.getOrMap());
+
+        orMap1.merge(orMap2);
+
+        System.out.println("orMap1 after merge: " + orMap1.getOrMap());
 
 
 

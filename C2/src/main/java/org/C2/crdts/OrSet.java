@@ -3,27 +3,27 @@ import java.util.Set;
 import java.util.HashSet;
 
 public class OrSet <K>{
+
     private Set<K> orSet;
 
-    OrSet(){
+    public OrSet(){
         orSet = new HashSet<>();
     }
 
-    void add(K key){
-        orSet.add(key);
+    public void add(K value){
+        orSet.add(value);
     }
 
-    void remove(K key){
-        orSet.remove(key);
+    public void remove(K value){
+        orSet.remove(value);
     }
 
-    Set<K> getOrSet(){
+    public Set<K> getOrSet(){
         return orSet;
     }
 
-    static <K> Set<K> merge(Set<K> set1, Set<K> set2){
-        Set<K> resultSet = new HashSet<>(set1);
-        resultSet.addAll(set2);
-        return resultSet;
+    public void merge(OrSet<K> orSet2){
+        orSet.addAll(orSet2.getOrSet());
     }
+
 }

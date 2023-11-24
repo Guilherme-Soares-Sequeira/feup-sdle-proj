@@ -17,7 +17,11 @@ public class OrSet <K>{
         orSet.remove(key);
     }
 
-    public Set<K> merge(Set<K> set1, Set<K> set2){
+    Set<K> getOrSet(){
+        return orSet;
+    }
+
+    static <K> Set<K> merge(Set<K> set1, Set<K> set2){
         Set<K> resultSet = new HashSet<>(set1);
         resultSet.addAll(set2);
         return resultSet;

@@ -1,5 +1,4 @@
 package org.C2.crdts;
-import org.C2.utils.DotContext;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,29 +34,8 @@ public class OrMap<N, V, K extends String> {
         m.put(n, v);
     }
 
-    /*public OrMap<N, V, K> erase(N n) {
-        OrMap<N, V, K> r = new OrMap<>();
-        if (m.containsKey(n)) {
-            V v = m.get(n);
-            v.reset();
-            r.c = v.context();
-            m.remove(n);
-        }
-        return r;
-    }*/
 
-    /*public OrMap<N, V, K> reset() {
-        OrMap<N, V, K> r = new OrMap<>();
-        if (!m.isEmpty()) {
-            for (Map.Entry<N, V> entry : m.entrySet()) {
-                V v = entry.getValue();
-                v.reset();
-                r.c.join(v.getContext());
-            }
-            m.clear();
-        }
-        return r;
-    }*/
+
 
     public void join(OrMap<N, V, K> o) {
         DotContext<K> ic = c.copy(); // Creating a copy of the context

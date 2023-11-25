@@ -60,8 +60,8 @@ N/A
 
 #### Use Cases
 
-- External tool for adding or removing servers queries seeds servers to obtain current 
-membership status.
+- When adding or removing a server, an external tool must first query the seed servers to
+obtain the current ring status.
 
 ### PUT
 

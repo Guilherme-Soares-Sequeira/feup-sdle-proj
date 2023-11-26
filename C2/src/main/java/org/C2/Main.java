@@ -55,21 +55,41 @@ public class Main {
         System.out.println("Counter value: " + counter.value());
 
         // test ORMap
-        OrMap<String, String, String> orMap1 = new OrMap<>();
-        OrMap<String, String, String> orMap2 = new OrMap<>();
+        OrMap<String, OrSet<String>> orMap1 = new OrMap<>();
+        OrMap<String, OrSet<String>> orMap2 = new OrMap<>();
 
-        orMap1.add("paint", "blue");
-        orMap1.add("sound", "loud");
-        orMap1.add("sound", "soft");
-        orMap2.add("paint", "red");
-        orMap2.add("number", "42");
+        OrSet<String> orSet1 = new OrSet<>();
+        OrSet<String> orSet2 = new OrSet<>();
 
-        System.out.println("orMap1: " + orMap1.getOrMap());
-        System.out.println("orMap2: " + orMap2.getOrMap());
+        orSet1.add("blue");
+        orSet2.add("loud");
+        orSet2.add("soft");
+
+        orMap1.add("paint", orSet1);
+        orMap1.add("sound", orSet2);
+
+        orSet1 = new OrSet<>();
+        orSet2 = new OrSet<>();
+
+        orSet1.add("red");
+        orSet2.add("42");
+
+        orMap2.add("paint", orSet1);
+        orMap2.add("number", orSet2);
 
         orMap1.merge(orMap2);
 
-        System.out.println("orMap1 after merge: " + orMap1.getOrMap());
+        System.out.println("OrMap value: ");
+        orMap1.print();
+
+        orMap1.remove("paint");
+        orSet1 = new OrSet<>();
+        orSet1.add("green");
+        orMap2.add("paint", orSet1);
+        orMap2.merge(orMap1);
+
+        System.out.println("OrMap2 value after remove: ");
+        orMap2.print();
 
 
 

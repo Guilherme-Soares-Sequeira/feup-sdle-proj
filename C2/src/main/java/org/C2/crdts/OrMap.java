@@ -1,55 +1,73 @@
 package org.C2.crdts;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.C2.crdts.OrSet;
-public class OrMap<K, V, M extends String> {
-
-    private Map<K, OrSet<V>> orMap;
+public class OrMap<K, V> {
+    private OrSet<K> keys;
+    private Map<K, V> values;
 
     public OrMap(){
-        orMap = new HashMap<>();
+        keys = new OrSet<>();
+        values = new HashMap<>();
+    }
+
+    public static <K, V> OrMap<K, V> zero(){
+        return new OrMap<>();
+    }
+
+    public Map<K, V> value(){
+        Map<K, V> result = new HashMap<>();
+        for(K key : keys.value()){
+            result.put(key, values.get(key));
+        }
+
+        return result;
     }
 
     public void add(K key, V value){
-        if(orMap.containsKey(key)){
-            orMap.get(key).add(value);
-        }else{
-            OrSet<V> orSet = new OrSet<>();
-            orSet.add(value);
-            orMap.put(key, orSet);
+        keys.add(key);
+        values.put(key, value);
+    }
+
+    public void remove(K key){
+        if(keys.value().contains(key)) {
+            keys.remove(key);
+            values.remove(key);
         }
     }
 
-    public void remove(K key, V value){
-        if(orMap.containsKey(key)){
-            orMap.get(key).remove(value);
+    public void merge(OrMap<K, V> orMap2){
+        keys.merge(orMap2.keys);
+        HashMap<K, V> temp = new HashMap<>(values);
+        for(K key: keys.value()){
+            if(values.containsKey(key) && orMap2.values.containsKey(key)){
+                temp.put(key, mergeValues(values.get(key), orMap2.values.get(key)));
+            } else if(values.containsKey(key)){
+                temp.put(key, values.get(key));
+            } else if (orMap2.values.containsKey(key)) {
+                temp.put(key, orMap2.values.get(key));
+            }
         }
+        this.values = temp;
     }
 
-    public Set<V> get(K key){
-        if(orMap.containsKey(key)){
-            return orMap.get(key).getOrSet();
-        }else{
-            return null;
+    private V mergeValues(V value1, V value2){
+        if(value1 instanceof PNCounter){
+            ((PNCounter) value1).merge((PNCounter) value2);
+        } else if(value1 instanceof OrSet){
+            ((OrSet) value1).merge((OrSet) value2);
         }
+        return value1;
     }
 
-    public void merge(OrMap<K, V, M> orMap2){
-        for(K key : orMap2.orMap.keySet()){
-            if(orMap.containsKey(key)){
-                orMap.get(key).merge(orMap2.orMap.get(key));
-            }else{
-                orMap.put(key, orMap2.orMap.get(key));
+    public void print(){
+        for(K key: keys.value()){
+            System.out.println(key + " : " );
+            for(String s: ((OrSet<String>) values.get(key)).value()){
+                System.out.println(s);
             }
         }
     }
-
-    public Map<K, OrSet<V>> getOrMap(){
-        return orMap;
-    }
-
-
-
 }

@@ -18,8 +18,6 @@ public class Main {
         counter.increment("A");
         counter.decrement("A");
 
-
-
         // user B pulls and decrements 2
 
         counter.decrement("B");
@@ -36,8 +34,6 @@ public class Main {
         counter2.increment("A");
         counter2.decrement("A");
         counter2.decrement("A");
-
-
 
         // user B pulls and decrements 2 and increments 1
 
@@ -79,19 +75,18 @@ public class Main {
 
         orMap1.merge(orMap2);
 
-        System.out.println("OrMap value: ");
+        System.out.println("OrMap1 value after merge: ");
         orMap1.print();
 
         orMap1.remove("paint");
         orSet1 = new OrSet<>();
         orSet1.add("green");
         orMap2.add("paint", orSet1);
+
         orMap2.merge(orMap1);
 
-        System.out.println("OrMap2 value after remove: ");
+        System.out.println("OrMap2 value after merge: ");
         orMap2.print();
-
-
 
 
         /*

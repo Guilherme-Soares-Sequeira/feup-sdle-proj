@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class OrMap<K, V> {
-    private OrSet<K> keys;
+    private final OrSet<K> keys;
     private Map<K, V> values;
 
     public OrMap(){
@@ -33,7 +33,6 @@ public class OrMap<K, V> {
 
     public void remove(K key){
         if(keys.value().contains(key)) {
-            keys.remove(key);
             values.remove(key);
         }
     }
@@ -63,11 +62,13 @@ public class OrMap<K, V> {
     }
 
     public void print(){
-        for(K key: keys.value()){
-            System.out.println(key + " : " );
-            for(String s: ((OrSet<String>) values.get(key)).value()){
-                System.out.println(s);
-            }
+        for(K key : keys.value()){
+           // Print the keys followed by each value of the set
+              System.out.print(key + ": ");
+              for (K value : ((OrSet<K>) values.get(key)).value()) {
+                  System.out.print(value + " ");
+              }
+
         }
     }
 }

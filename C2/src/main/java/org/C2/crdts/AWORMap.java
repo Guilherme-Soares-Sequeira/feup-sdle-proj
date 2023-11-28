@@ -4,17 +4,17 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class OrMap<K, V> {
-    private final OrSet<K> keys;
+public class AWORMap<K, V> {
+    private final AWORSet<K> keys;
     private Map<K, V> values;
 
-    public OrMap(){
-        keys = new OrSet<>();
+    public AWORMap(){
+        keys = new AWORSet<>();
         values = new HashMap<>();
     }
 
-    public static <K, V> OrMap<K, V> zero(){
-        return new OrMap<>();
+    public static <K, V> AWORMap<K, V> zero(){
+        return new AWORMap<>();
     }
 
     public Map<K, V> value(){
@@ -37,7 +37,7 @@ public class OrMap<K, V> {
         }
     }
 
-    public void merge(OrMap<K, V> orMap2){
+    public void merge(AWORMap<K, V> orMap2){
         keys.merge(orMap2.keys);
         HashMap<K, V> temp = new HashMap<>(values);
         for(K key: keys.value()){
@@ -55,8 +55,8 @@ public class OrMap<K, V> {
     private V mergeValues(V value1, V value2){
         if(value1 instanceof PNCounter){
             ((PNCounter) value1).merge((PNCounter) value2);
-        } else if(value1 instanceof OrSet){
-            ((OrSet) value1).merge((OrSet) value2);
+        } else if(value1 instanceof AWORSet){
+            ((AWORSet) value1).merge((AWORSet) value2);
         }
         return value1;
     }
@@ -65,7 +65,7 @@ public class OrMap<K, V> {
         for(K key : keys.value()){
            // Print the keys followed by each value of the set
               System.out.print(key + ": ");
-              for (K value : ((OrSet<K>) values.get(key)).value()) {
+              for (K value : ((AWORSet<K>) values.get(key)).value()) {
                   System.out.print(value + " ");
               }
 

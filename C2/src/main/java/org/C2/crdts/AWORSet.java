@@ -2,20 +2,20 @@ package org.C2.crdts;
 import java.util.Set;
 import java.util.HashSet;
 
-public class OrSet<K>{
+public class AWORSet<K>{
 
     private Set<K> add;
     private Set<K> rem;
 
     private Set<K> value;
-    public OrSet(){
+    public AWORSet(){
         add = new HashSet<>();
         rem = new HashSet<>();
         value = new HashSet<>();
     }
 
-    public static <K> OrSet<K> zero(){
-        return new OrSet<>();
+    public static <K> AWORSet<K> zero(){
+        return new AWORSet<>();
     }
 
     public Set<K> value(){
@@ -38,7 +38,7 @@ public class OrSet<K>{
         }
     }
 
-    public void merge(OrSet<K> orSet2){
+    public void merge(AWORSet<K> orSet2){
         add.addAll(orSet2.add);
         rem.addAll(orSet2.rem);
         add.removeAll(rem);

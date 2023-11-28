@@ -1,10 +1,8 @@
 package org.C2;
 
-import org.C2.crdts.OrSet;
+import org.C2.crdts.AWORSet;
 import org.C2.crdts.PNCounter;
-import org.C2.crdts.OrMap;
-
-import java.util.HashMap;
+import org.C2.crdts.AWORMap;
 
 public class Main {
     public static void main(String[] args) {
@@ -51,42 +49,42 @@ public class Main {
         System.out.println("Counter value: " + counter.value());
 
         // test ORMap
-        OrMap<String, OrSet<String>> orMap1 = new OrMap<>();
-        OrMap<String, OrSet<String>> orMap2 = new OrMap<>();
+        AWORMap<String, AWORSet<String>> AWORMap1 = new AWORMap<>();
+        AWORMap<String, AWORSet<String>> AWORMap2 = new AWORMap<>();
 
-        OrSet<String> orSet1 = new OrSet<>();
-        OrSet<String> orSet2 = new OrSet<>();
+        AWORSet<String> AWORSet1 = new AWORSet<>();
+        AWORSet<String> AWORSet2 = new AWORSet<>();
 
-        orSet1.add("blue");
-        orSet2.add("loud");
-        orSet2.add("soft");
+        AWORSet1.add("blue");
+        AWORSet2.add("loud");
+        AWORSet2.add("soft");
 
-        orMap1.add("paint", orSet1);
-        orMap1.add("sound", orSet2);
+        AWORMap1.add("paint", AWORSet1);
+        AWORMap1.add("sound", AWORSet2);
 
-        orSet1 = new OrSet<>();
-        orSet2 = new OrSet<>();
+        AWORSet1 = new AWORSet<>();
+        AWORSet2 = new AWORSet<>();
 
-        orSet1.add("red");
-        orSet2.add("42");
+        AWORSet1.add("red");
+        AWORSet2.add("42");
 
-        orMap2.add("paint", orSet1);
-        orMap2.add("number", orSet2);
+        AWORMap2.add("paint", AWORSet1);
+        AWORMap2.add("number", AWORSet2);
 
-        orMap1.merge(orMap2);
+        AWORMap1.merge(AWORMap2);
 
         System.out.println("OrMap1 value after merge: ");
-        orMap1.print();
+        AWORMap1.print();
 
-        orMap1.remove("paint");
-        orSet1 = new OrSet<>();
-        orSet1.add("green");
-        orMap2.add("paint", orSet1);
+        AWORMap1.remove("paint");
+        AWORSet1 = new AWORSet<>();
+        AWORSet1.add("green");
+        AWORMap2.add("paint", AWORSet1);
 
-        orMap2.merge(orMap1);
+        AWORMap2.merge(AWORMap1);
 
         System.out.println("OrMap2 value after merge: ");
-        orMap2.print();
+        AWORMap2.print();
 
 
         /*

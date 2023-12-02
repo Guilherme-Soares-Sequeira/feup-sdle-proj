@@ -13,7 +13,7 @@ import java.nio.file.Paths;
 import java.util.Optional;
 
 public class KVStoreTest {
-    private static final String KV_STORE_TEST_DIR = "src/test/kvstore";
+    private static final String KV_STORE_TEST_DIR = "src/test/kvstore/A";
     private static final String TEST_SERVER = "A";
     private static final String TEST_KEY = "key";
     private static final String TEST_CONTENTS = "contents";
@@ -36,7 +36,7 @@ public class KVStoreTest {
 
     @Test
     public void testPutAndGet() {
-        this.kvstore.put(TEST_SERVER, TEST_KEY, TEST_CONTENTS);
+        this.kvstore.put(TEST_KEY, TEST_CONTENTS);
 
         Optional<String> result = this.kvstore.get(TEST_KEY);
 
@@ -46,8 +46,8 @@ public class KVStoreTest {
 
     @Test
     public void testPutOverwrite() {
-        this.kvstore.put(TEST_SERVER, TEST_KEY, "before");
-        this.kvstore.put(TEST_SERVER, TEST_KEY, "after");
+        this.kvstore.put(TEST_KEY, "before");
+        this.kvstore.put(TEST_KEY, "after");
 
         Optional<String> result = this.kvstore.get(TEST_KEY);
 

@@ -51,5 +51,6 @@ public class NodeServerTest {
         ConsistentHasher received = ConsistentHasher.fromJSON((String) json.get("ring"));
         Assertions.assertTrue(received.isEquivalent(expectedRing));
         Assertions.assertTrue(expectedRing.isEquivalent(received));
+        Assertions.assertFalse(received.isEquivalent(notExpectedRing));
     }
 }

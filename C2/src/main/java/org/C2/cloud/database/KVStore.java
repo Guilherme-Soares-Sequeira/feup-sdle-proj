@@ -58,12 +58,11 @@ public class KVStore {
         }
     }
 
-    public void put(String server, String key, String contents) {
-        String svdir = this.directory + File.separator + server;
+    public void put(String key, String contents) {
         String filepath = this.directory + File.separator + key + ".json";
 
         try {
-            Path serverPath = Paths.get(svdir);
+            Path serverPath = Paths.get(this.directory);
             if (!Files.exists(serverPath)) {
                 Files.createDirectories(serverPath);
             }

@@ -12,6 +12,13 @@ public class DotContext {
         this.dotCloud = new HashSet<>();
     }
 
+    public Map<String, Integer> getCausalContext() {
+        return causalContext;
+    }
+
+    public Set<Dot> getDotCloud() {
+        return dotCloud;
+    }
 
     public boolean containsDot(Dot dot) {
         Integer itm = this.causalContext.get(dot.getReplicaID());
@@ -82,5 +89,6 @@ public class DotContext {
         this.compact();
 
     }
-    
+
+
 }

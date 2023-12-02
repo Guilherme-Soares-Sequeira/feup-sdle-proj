@@ -55,18 +55,18 @@ public class DotContext {
 
 
     public Dot makeDot(String id) {
-        Integer existing = causalContext.get(id);
+        Integer existing = this.causalContext.get(id);
         if (existing != null) {
-            causalContext.put(id, existing + 1);
+            this.causalContext.put(id, existing + 1);
             return new Dot(id, existing + 1);
         } else {
-            causalContext.put(id, 1);
+            this.causalContext.put(id, 1);
             return new Dot(id, 1);
         }
     }
 
     public void insertDot(Dot d, boolean compactNow) {
-        dotCloud.add(d);
+        this.dotCloud.add(d);
         if (compactNow) compact();
     }
 
@@ -79,15 +79,20 @@ public class DotContext {
                 this.causalContext.put(entry.getKey(), entry.getValue());
             }
             else{
-                this.causalContext.put(entry.getKey(), entry.getValue());
+                this.causalContext.put(entry.getKey(), Math.max(entry.getValue(), selfSequenceNumber));
             }
         }
         for(Dot dot : o.dotCloud) {
-            this.insertDot(dot, false);
+            insertDot(dot, false);
         }
 
-        this.compact();
+        compact();
 
+    }
+
+    public void print() {
+        System.out.println("Causal context: " + this.causalContext);
+        System.out.println("Dot cloud: " + this.dotCloud);
     }
 
 

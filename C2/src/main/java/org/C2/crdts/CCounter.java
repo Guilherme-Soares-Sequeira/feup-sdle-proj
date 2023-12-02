@@ -81,4 +81,14 @@ public class CCounter {
         this.getDotKernel().join(other.getDotKernel());
     }
 
+    public Integer value(){
+        Integer res = 0;
+        for(Map.Entry<Dot, Integer> entry: this.dotKernel.getDotMap().entrySet()){
+            if(entry.getKey().getReplicaID() == this.id){
+                res += entry.getValue();
+            }
+        }
+        return res;
+    }
+
 }

@@ -53,7 +53,8 @@ public class ORMap{
         DotContext imutableContext = this.context;
         for(Map.Entry<String, CCounter> entry : other.map.entrySet()){
             CCounter res = this.map.get(entry.getKey());
-            this.map.get(entry.getKey()).join(entry.getValue());
+            if(res == null) this.map.put(entry.getKey(), entry.getValue());
+            else this.map.get(entry.getKey()).join(entry.getValue());
             this.context= imutableContext;
         }
         for(Map.Entry<String, CCounter> entry : this.map.entrySet()){
@@ -64,5 +65,12 @@ public class ORMap{
             }
         }
         this.context.join(other.context);
+
+    }
+
+    public void print(){
+        for(Map.Entry<String, CCounter> entry : this.map.entrySet()){
+            System.out.println(entry.getKey() + " : " + entry.getValue().value());
+        }
     }
 }

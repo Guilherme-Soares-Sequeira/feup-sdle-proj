@@ -52,12 +52,6 @@ N/A
 
 - ring: String (ConsistentHasher.toJSON())
 
-##### 400 - Bad Request
-
-###### Body
-
-- errorMessage: String
-
 ##### 500 - Internal Server Error
 
 ###### Body
@@ -83,7 +77,7 @@ obtain the current ring status.
 
 N/A
 
-##### 500 - Internal Server Error
+##### 400 - Bad Request
 
 ###### Body
 
@@ -99,7 +93,7 @@ N/A
 
 #### Request Structure
 
-- ring: String (ConsistentHasher.toJSON())
+N/A
 
 #### Responses
 
@@ -110,11 +104,17 @@ N/A
 - list: String (CRDT.toJSON())
 - ring: String (ConsistentHasher.toJSON())
 
+##### 400 - Bad Request
+
+###### Body
+
+- errorMessage: String
+
 ##### 404 - Not Found
 
 ###### Body
 
-N/A
+- errorMessage: String
 
 ##### 500 - Internal Server Error
 
@@ -142,6 +142,12 @@ shopping list.
 
 N/A
 
+##### 400 - Bad Request
+
+###### Body
+
+- errorMessage: String
+
 ##### 500 - Internal Server Error
 
 ###### Body
@@ -162,7 +168,7 @@ N/A
 
 #### Responses
 
-##### 102 - Processing
+##### 202 - Processing
 
 ###### Body
 
@@ -190,7 +196,7 @@ balancer to determine to what user it is supposed to redirect it to.
 
 #### Responses
 
-##### 102 - Processing
+##### 202 - Processing
 
 ###### Body
 

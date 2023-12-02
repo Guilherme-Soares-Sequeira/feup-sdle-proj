@@ -174,6 +174,12 @@ N/A
 
 N/A
 
+##### 400 - Bad Request
+
+###### Body
+
+- errorMessage: String
+
 ##### 500 - Internal Server Error
 
 ###### Body
@@ -201,6 +207,12 @@ balancer to determine to what user it is supposed to redirect it to.
 ###### Body
 
 N/A
+
+##### 400 - Bad Request
+
+###### Body
+
+- errorMessage: String
 
 ##### 500 - Internal Server Error
 

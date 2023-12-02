@@ -52,6 +52,12 @@ N/A
 
 - ring: String (ConsistentHasher.toJSON())
 
+##### 400 - Bad Request
+
+###### Body
+
+- errorMessage: String
+
 ##### 500 - Internal Server Error
 
 ###### Body

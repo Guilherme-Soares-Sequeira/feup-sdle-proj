@@ -4,61 +4,79 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.HashMap;
+import java.util.Map;
 
-public class ShoppingListUI {
-    private DefaultListModel<String> listModel;
+public class ShoppingListUI extends JFrame {
+    private Map<String, Integer> shoppingList;
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new ShoppingListUI().createAndShowGUI());
-    }
+    private JTextField itemNameField;
+    private JButton addButton;
+    private JTextArea itemListArea;
 
-    private void createAndShowGUI() {
-        JFrame frame = new JFrame("Shopping List Application");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(400, 400);
+    public ShoppingListUI() {
+        shoppingList = new HashMap<>();
 
-        listModel = new DefaultListModel<>();
-
-        JList<String> shoppingList = new JList<>(listModel);
-        JScrollPane listScrollPane = new JScrollPane(shoppingList);
-
-        JTextField itemNameTextField = new JTextField(20);
-        JButton addButton = new JButton("+");
-        JButton removeButton = new JButton("-");
+        itemNameField = new JTextField(20);
+        addButton = new JButton("Add");
+        itemListArea = new JTextArea(10, 30);
 
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String itemName = itemNameTextField.getText().trim();
-
-                if (!itemName.isEmpty()) {
-                    listModel.addElement(itemName);
-                    itemNameTextField.setText("");
-                }
+                addItem();
             }
         });
 
-        removeButton.addActionListener(new ActionListener() {
+        JPanel panel = new JPanel();
+        panel.add(new JLabel("Item name:"));
+        panel.add(itemNameField);
+        panel.add(addButton);
+
+        Container container = getContentPane();
+        container.setLayout(new BorderLayout());
+        container.add(panel, BorderLayout.NORTH);
+        container.add(new JScrollPane(itemListArea), BorderLayout.CENTER);
+
+        setTitle("Shopping List Application");
+        setSize(1280, 720);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+
+    private void addItem() {
+        String itemName = itemNameField.getText().trim();
+
+        if (!itemName.isEmpty()) {
+            shoppingList.put(itemName, 0);
+            updateItemList();
+            itemNameField.setText("");
+        }
+    }
+
+    private void updateItemList() {
+        itemListArea.removeAll();
+        itemListArea.setText("");
+
+        for (Map.Entry<String, Integer> entry : shoppingList.entrySet()) {
+            JPanel itemPanel = new JPanel();
+
+            String itemName = entry.getKey();
+            int quantity = entry.getValue();
+
+            itemPanel.add(new JLabel(itemName));
+
+            itemListArea.append(entry.getKey() + " - Quantity: " + entry.getValue() + "\n");
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                int selectedIndex = shoppingList.getSelectedIndex();
-                if (selectedIndex == -1) {
-                    listModel.remove(selectedIndex);
-                }
+            public void run() {
+                new ShoppingListUI();
             }
         });
-
-        frame.setLayout(new BorderLayout());
-
-        JPanel inputPanel = new JPanel();
-        inputPanel.add(new JLabel("Item name: "));
-        inputPanel.add(itemNameTextField);
-        inputPanel.add(addButton);
-        inputPanel.add(removeButton);
-
-        frame.add(inputPanel, BorderLayout.NORTH);
-        frame.add(listScrollPane, BorderLayout.CENTER);
-
-        frame.setVisible(true);
     }
 }

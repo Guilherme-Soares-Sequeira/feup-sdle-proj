@@ -12,14 +12,15 @@ public class ShoppingListUI extends JFrame {
 
     private JTextField itemNameField;
     private JButton addButton;
-    private JTextArea itemListArea;
+    private JPanel itemListPanel;
 
     public ShoppingListUI() {
         shoppingList = new HashMap<>();
 
         itemNameField = new JTextField(20);
         addButton = new JButton("Add");
-        itemListArea = new JTextArea(10, 30);
+        itemListPanel = new JPanel();
+        itemListPanel.setLayout(new BoxLayout(itemListPanel, BoxLayout.Y_AXIS));
 
         addButton.addActionListener(new ActionListener() {
             @Override
@@ -36,7 +37,7 @@ public class ShoppingListUI extends JFrame {
         Container container = getContentPane();
         container.setLayout(new BorderLayout());
         container.add(panel, BorderLayout.NORTH);
-        container.add(new JScrollPane(itemListArea), BorderLayout.CENTER);
+        container.add(new JScrollPane(itemListPanel), BorderLayout.CENTER);
 
         setTitle("Shopping List Application");
         setSize(1280, 720);
@@ -56,19 +57,58 @@ public class ShoppingListUI extends JFrame {
     }
 
     private void updateItemList() {
-        itemListArea.removeAll();
-        itemListArea.setText("");
+        itemListPanel.removeAll();
 
         for (Map.Entry<String, Integer> entry : shoppingList.entrySet()) {
             JPanel itemPanel = new JPanel();
+            itemPanel.setLayout(new FlowLayout());
 
             String itemName = entry.getKey();
             int quantity = entry.getValue();
 
-            itemPanel.add(new JLabel(itemName));
+            JLabel nameLabel = new JLabel(itemName);
+            JLabel quantityLabel = new JLabel("Quantity: " + quantity); // Display quantity
 
-            itemListArea.append(entry.getKey() + " - Quantity: " + entry.getValue() + "\n");
+            itemPanel.add(nameLabel);
+            itemPanel.add(quantityLabel);
+
+            JButton incrementButton = new JButton("+");
+            incrementButton.addActionListener(createIncrementActionListener(itemName));
+
+            JButton decrementButton = new JButton("-");
+            decrementButton.addActionListener(createDecrementActionListener(itemName, quantity));
+
+            itemPanel.add(incrementButton);
+            itemPanel.add(decrementButton);
+
+            itemListPanel.add(itemPanel);
         }
+
+        itemListPanel.revalidate();
+        itemListPanel.repaint();
+    }
+
+    private ActionListener createIncrementActionListener(String itemName) {
+        return new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int currentQuantity = shoppingList.get(itemName);
+                shoppingList.put(itemName, currentQuantity + 1);
+                updateItemList();
+            }
+        };
+    }
+
+    private ActionListener createDecrementActionListener(String itemName, int currentQuantity) {
+        return new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (currentQuantity > 0) {
+                    shoppingList.put(itemName, currentQuantity - 1);
+                    updateItemList();
+                }
+            }
+        };
     }
 
     public static void main(String[] args) {

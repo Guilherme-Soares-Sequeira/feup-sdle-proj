@@ -47,7 +47,7 @@ public class DotKernel {
                 }
             }
         }
-        /*
+
         //check the dot with the biggest value in dotMap
         // when done checked, create new dot with the biggest value
         // add the new dot to the dotMap and delete the old dots
@@ -63,10 +63,10 @@ public class DotKernel {
             this.dotMap.clear();
             this.dotMap.put(maxDot, maxValue);
 
-        }*/
+        }
 
 
-        this.context.join(other.context);
+        //this.context.join(other.context);
     }
 
     public DotKernel add (String id, Integer value){

@@ -12,14 +12,13 @@ public class Main {
 
         map1.insert("banana");
         map1.value("banana").inc(3);
-        map1.value("banana").dec(1);
         map1.insert("apple");
         map1.value("apple").inc(2);
         map1.insert("orange");
         map1.value("orange").inc(3);
 
         map2.insert("banana");
-        map2.value("banana").inc(1);
+        map2.value("banana").inc(4);
         map2.insert("orange");
         map2.value("orange").inc(5);
 

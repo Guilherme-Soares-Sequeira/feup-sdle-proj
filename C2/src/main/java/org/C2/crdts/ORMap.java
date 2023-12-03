@@ -50,7 +50,9 @@ public class ORMap{
 
 
     public void join(ORMap other){
-        DotContext imutableContext = new DotContext(this.context);
+        System.out.println("this:" + this.context);
+        DotContext immutableContext = this.context.deepCopy();
+        System.out.println("immutable:" + immutableContext);
         for(Map.Entry<String, CCounter> entry : other.map.entrySet()){
             CCounter res = this.map.get(entry.getKey());
             if(res == null) this.map.put(entry.getKey(), entry.getValue());
@@ -58,13 +60,13 @@ public class ORMap{
                 System.out.println("Joining " + this.map.get(entry.getKey()));
                 this.map.get(entry.getKey()).join(entry.getValue());
             }
-            this.context= imutableContext;
+            this.context= immutableContext;
         }
         for(Map.Entry<String, CCounter> entry : this.map.entrySet()){
             if(!other.map.containsKey(entry.getKey())){
                 CCounter empty = new CCounter(this.id, other.context);
                 entry.getValue().join(empty);
-                this.context = imutableContext;
+                this.context = immutableContext;
             }
         }
         this.context.join(other.context);

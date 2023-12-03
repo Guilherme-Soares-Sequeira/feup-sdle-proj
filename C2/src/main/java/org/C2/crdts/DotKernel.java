@@ -47,6 +47,24 @@ public class DotKernel {
                 }
             }
         }
+        /*
+        //check the dot with the biggest value in dotMap
+        // when done checked, create new dot with the biggest value
+        // add the new dot to the dotMap and delete the old dots
+        Dot maxDot = null;
+        Integer maxValue = 0;
+        for(Map.Entry<Dot, Integer> entry: this.dotMap.entrySet()){
+            if(entry.getValue() > maxValue){
+                maxValue = entry.getValue();
+                maxDot = entry.getKey();
+            }
+        }
+        if(maxDot != null){
+            this.dotMap.clear();
+            this.dotMap.put(maxDot, maxValue);
+
+        }*/
+
 
         this.context.join(other.context);
     }

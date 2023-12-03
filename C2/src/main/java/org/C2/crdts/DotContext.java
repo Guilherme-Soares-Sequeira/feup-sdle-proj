@@ -11,10 +11,6 @@ public class DotContext {
         this.causalContext = new HashMap<>();
         this.dotCloud = new HashSet<>();
     }
-    public DotContext(DotContext other){
-        this.causalContext= other.causalContext;
-        this.dotCloud = other.dotCloud;
-    }
 
     public Map<String, Integer> getCausalContext() {
         return causalContext;
@@ -29,6 +25,13 @@ public class DotContext {
         if (itm != null && dot.getSequenceNumber() <= itm) return true;
         if(this.dotCloud.contains(dot)) return true;
         return false;
+    }
+
+    public DotContext deepCopy() {
+        DotContext newContext = new DotContext();
+        newContext.causalContext = new HashMap<>(this.causalContext);
+        newContext.dotCloud = new HashSet<>(this.dotCloud);
+        return newContext;
     }
 
     public void compact() {

@@ -31,7 +31,7 @@ public class ORMap{
     public boolean insert(String id) {
         CCounter res = this.map.get(id);
         if (res == null) {
-            this.map.put(id, new CCounter(id, this.context));
+            this.map.put(id, new CCounter(this.id, this.context));
             return true;
         }
         return false;
@@ -54,7 +54,10 @@ public class ORMap{
         for(Map.Entry<String, CCounter> entry : other.map.entrySet()){
             CCounter res = this.map.get(entry.getKey());
             if(res == null) this.map.put(entry.getKey(), entry.getValue());
-            else this.map.get(entry.getKey()).join(entry.getValue());
+            else{
+                System.out.println("Joining " + this.map.get(entry.getKey()));
+                this.map.get(entry.getKey()).join(entry.getValue());
+            }
             this.context= imutableContext;
         }
         for(Map.Entry<String, CCounter> entry : this.map.entrySet()){

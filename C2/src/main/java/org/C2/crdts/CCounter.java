@@ -36,6 +36,7 @@ public class CCounter {
 
     public CCounter inc(Integer value){
 
+        System.out.println("Incrementing " + this.id + " " + value);
         CCounter res = new CCounter(this.id);
         Set<Dot> dots = new HashSet<>();
         Integer base= 0;

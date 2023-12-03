@@ -23,7 +23,8 @@ public class DotContext {
     public boolean containsDot(Dot dot) {
         Integer itm = this.causalContext.get(dot.getReplicaID());
         if (itm != null && dot.getSequenceNumber() <= itm) return true;
-        return dotCloud.contains(dot);
+        if(this.dotCloud.contains(dot)) return true;
+        return false;
     }
 
     public void compact() {
@@ -55,6 +56,7 @@ public class DotContext {
 
 
     public Dot makeDot(String id) {
+        System.out.println("Making dot for " + id);
         Integer existing = this.causalContext.get(id);
         if (existing != null) {
             this.causalContext.put(id, existing + 1);
@@ -80,6 +82,7 @@ public class DotContext {
             }
             else{
                 this.causalContext.put(entry.getKey(), Math.max(entry.getValue(), selfSequenceNumber));
+
             }
         }
         for(Dot dot : o.dotCloud) {

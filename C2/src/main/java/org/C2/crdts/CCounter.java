@@ -68,7 +68,9 @@ public class CCounter {
         for(Dot dot: dots){
             res.getDotKernel().join(this.dotKernel.remove(dot));
         }
-        res.getDotKernel().join(this.dotKernel.add(this.id, base-value));
+        Integer dec=base-value;
+        if (dec < 0) dec = 0;
+        res.getDotKernel().join(this.dotKernel.add(this.id, dec));
 
         return res;
     }

@@ -48,7 +48,6 @@ public class DotKernel {
             }
         }
 
-
         this.context.join(other.context);
     }
 

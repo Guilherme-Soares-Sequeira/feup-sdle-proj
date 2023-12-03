@@ -11,6 +11,10 @@ public class DotContext {
         this.causalContext = new HashMap<>();
         this.dotCloud = new HashSet<>();
     }
+    public DotContext(DotContext other){
+        this.causalContext= other.causalContext;
+        this.dotCloud = other.dotCloud;
+    }
 
     public Map<String, Integer> getCausalContext() {
         return causalContext;

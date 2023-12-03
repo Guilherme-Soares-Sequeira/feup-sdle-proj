@@ -50,7 +50,7 @@ public class ORMap{
 
 
     public void join(ORMap other){
-        DotContext imutableContext = this.context;
+        DotContext imutableContext = new DotContext(this.context);
         for(Map.Entry<String, CCounter> entry : other.map.entrySet()){
             CCounter res = this.map.get(entry.getKey());
             if(res == null) this.map.put(entry.getKey(), entry.getValue());

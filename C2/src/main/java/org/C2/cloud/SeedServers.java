@@ -1,6 +1,5 @@
 package org.C2.cloud;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public record SeedServers() {

@@ -1,22 +1,22 @@
 package org.C2.cloud;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import okhttp3.OkHttpClient;
 import org.C2.cloud.database.KVStore;
 import org.C2.utils.ConsistentHashingParameters;
 import org.C2.utils.JsonKeys;
+import org.C2.utils.MockCRDT;
 import org.C2.utils.ServerInfo;
-import org.eclipse.jetty.util.ajax.JSON;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import spark.Request;
 import spark.Response;
+import spark.Request;
 import spark.servlet.SparkApplication;
-
-import javax.swing.text.html.Option;
 
 import static java.text.MessageFormat.format;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -104,10 +104,22 @@ public class NodeServer implements SparkApplication {
     private String putExternalRing(Request req, Response res) {
         JSONObject response = new JSONObject();
         final String endpoint = "PUT /external/ring";
+        JSONObject requestBody;
 
-        String ringJson = req.attribute(JsonKeys.ring);
+        try {
+            requestBody = new JSONObject(new JSONTokener(req.body()));
+        } catch (Exception e) {
+            String errorMessage = "Could not parse request body.";
+            res.status(400);
+            this.logError(endpoint, errorMessage);
+            response.put(JsonKeys.errorMessage, errorMessage);
+            return response.toString();
+        }
 
-        if (ringJson == null) {
+        String ringJson;
+        try {
+            ringJson = requestBody.getString(JsonKeys.ring);
+        } catch (Exception ignored)  {
             final String errorString = "'ring' attribute not found in request.";
 
             this.logError(endpoint, errorString);
@@ -133,7 +145,7 @@ public class NodeServer implements SparkApplication {
 
         this.ring = receivedRing;
 
-        res.status(200);
+        res.status(201);
         return response.toString();
     }
 
@@ -239,12 +251,34 @@ public class NodeServer implements SparkApplication {
         String internalListJson = internalListOpt.get();
 
 
-        // TODO: Parse CRDT from internalListJson
-        // TODO: Parse CRDT from receivedListJson
-        // TODO: Merge them
+        // TODO: Change CRDT implementation
+        MockCRDT localCRDT;
+        try {
+            localCRDT = MockCRDT.fromJson(internalListJson);
+        } catch (JsonProcessingException e) {
+            String errorMessage = "Could not parse crdt json from internal storage";
+            res.status(500);
+            this.logError(endpoint, errorMessage);
+            response.put(JsonKeys.errorMessage, errorMessage);
+            return response.toString();
 
-        // TODO: Change internalListJson below to actual merged value's json
-        this.kvstore.put(listID, internalListJson);
+        }
+
+        // TODO: Change CRDT implementation
+        MockCRDT receivedCRDT;
+        try {
+            receivedCRDT = MockCRDT.fromJson(receivedListJson);
+        } catch (JsonProcessingException e) {
+            String errorMessage = "Could not parse received crdt json";
+            res.status(400);
+            this.logError(endpoint, errorMessage);
+            response.put(JsonKeys.errorMessage, errorMessage);
+            return response.toString();
+        }
+
+        localCRDT.merge(receivedCRDT);
+
+        this.kvstore.put(listID, localCRDT.toJson());
 
         res.status(201);
         return response.toString();
@@ -293,12 +327,48 @@ public class NodeServer implements SparkApplication {
             for (ServerInfo server : servers) {
                 CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
                     if (server.equals(this.serverInfo)) {
-                        // get stuff from local kvstore
-                        return "kvstore thingy madjingy";
+                        Optional<String> localListOpt = this.kvstore.get(listID);
+
+                        if (localListOpt.isEmpty()) {
+                            // do nothing, this future will be skipped
+                            throw new RuntimeException("Runtime Exception due to local database not having the requested list");
+                        }
+                        return localListOpt.get();
                     }
                     // fetch from server
+                    String url = format("http://{0}/internal/shopping-list/{1}", server.fullRepresentation(), listID);
 
-                    return "whatever we got from fetch";
+                    OkHttpClient client = new OkHttpClient();
+
+                    okhttp3.Request request = new okhttp3.Request.Builder()
+                            .url(url)
+                            .get()
+                            .build();
+
+
+                    try (okhttp3.Response nodeResp = client.newCall(request).execute()) {
+                        if (nodeResp.code() != 200 || nodeResp.body() == null) {
+                            throw new IOException();
+                        }
+
+                        JSONObject respJson = new JSONObject(new JSONTokener(nodeResp.body().toString()));
+
+                        try {
+                            String receivedRingJson = respJson.getString(JsonKeys.ring);
+                            ConsistentHasher receivedRing = ConsistentHasher.fromJSON(receivedRingJson);
+                            this.updateRingIfMoreRecent(receivedRing);
+                        } catch (Exception e) {
+                            //do nothing
+                            this.logWarning(endpoint, "Tried to update ring with response's ring but an error occurred.");
+                        }
+
+                        return respJson.getString(JsonKeys.list);
+
+                    } catch (IOException e) {
+                        // do nothing, this future will be skipped
+                        this.logError(endpoint, "Couldn't fetch internal shopping list: " + e);
+                        throw new RuntimeException("Runtime Exception due to error when fetching internal shopping list");
+                    }
                 });
 
                 futures.add(future);
@@ -312,8 +382,8 @@ public class NodeServer implements SparkApplication {
                 // do nothing
             }
 
-            // TODO: Instead of String this will be of the CRDT class
-            List<String> responseLists = new ArrayList<>();
+            // TODO: Change CRDT implementation
+            List<MockCRDT> responseList = new ArrayList<>();
 
             for (CompletableFuture<String> future : futures) {
                 if (future.isDone() && !future.isCompletedExceptionally()) {
@@ -324,8 +394,9 @@ public class NodeServer implements SparkApplication {
 
                         String listJson = responseJson.getString(JsonKeys.list);
 
-                        // TODO: Do some CRDT.fromJSON() and add that mf to responseLists
-                        responseLists.add(listJson);
+                        // TODO: Change CRDT implementation
+                        MockCRDT crdt =  MockCRDT.fromJson(listJson);
+                        responseList.add(crdt);
 
                         // TODO: Check if this doesn't impact performance too much
                         String ringJson = responseJson.getString(JsonKeys.ring);
@@ -345,14 +416,26 @@ public class NodeServer implements SparkApplication {
                 }
             }
 
-            if (responseLists.size() < ConsistentHashingParameters.R) {
+            if (responseList.size() < ConsistentHashingParameters.R) {
                 // TODO: Send a womp womp to load balancer
+                this.logWarning(endpoint, "Simulating sending a womp womp to load balancer");
+                return;
             }
 
-            // TODO: Merge all of them mfs into a single one
-            // TODO: Save that mf to this server's kvstore
+            // TODO: Change CRDT implementation
+            // ASOOM there is at least two...
+            MockCRDT accum = responseList.get(0);
+
+            for (int i = 1; i < responseList.size(); i ++) {
+                accum.merge(responseList.get(i));
+            }
+
+            this.kvstore.put(listID, accum.toJson());
+
             // TODO: return it to loadbalancer
 
+            // simulating sending it to loadbalancer
+            this.logWarning(endpoint, format("Simulating sending the crdt to loadbalancer... json = {0}", accum.toJson()));
         });
 
         return "";

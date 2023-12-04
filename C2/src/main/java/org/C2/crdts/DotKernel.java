@@ -2,6 +2,9 @@ package org.C2.crdts;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class DotKernel {
     private Map<Dot, Integer> dotMap;
@@ -103,5 +106,17 @@ public class DotKernel {
         this.dotMap.clear();
         return result;
     }
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    public String toJson() throws JsonProcessingException {
+        return mapper.writeValueAsString(this);
+    }
+
+    public DotKernel fromJson(String json) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(json, DotKernel.class);
+    }
+
 
 }

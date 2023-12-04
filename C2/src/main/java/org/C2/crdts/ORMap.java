@@ -6,6 +6,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 public class ORMap{
 
@@ -78,6 +82,26 @@ public class ORMap{
     public void print(){
         for(Map.Entry<String, CCounter> entry : this.map.entrySet()){
             System.out.println(entry.getKey() + " : " + entry.getValue().value());
+        }
+    }
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    public String toJson() {
+        try {
+            return mapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    public static ORMap fromJson(String json) {
+        try {
+            return new ObjectMapper().readValue(json, ORMap.class);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }

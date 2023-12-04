@@ -6,6 +6,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class CCounter {
     private DotKernel dotKernel;
     private String id;
@@ -92,6 +96,17 @@ public class CCounter {
             }
         }
         return res;
+    }
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    public String toJson() throws JsonProcessingException {
+        return mapper.writeValueAsString(this);
+    }
+
+    public static CCounter fromJson(String json) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(json, CCounter.class);
     }
 
 }

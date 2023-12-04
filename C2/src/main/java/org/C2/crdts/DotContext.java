@@ -1,6 +1,8 @@
 package org.C2.crdts;
 import java.util.*;
-
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 public class DotContext {
@@ -104,6 +106,18 @@ public class DotContext {
         System.out.println("Causal context: " + this.causalContext);
         System.out.println("Dot cloud: " + this.dotCloud);
     }
+
+
+    ObjectMapper mapper = new ObjectMapper();
+    public String toJSON() throws JsonProcessingException {
+        return mapper.writeValueAsString(this);
+    }
+
+    public static DotContext fromJSON(String json) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(json, DotContext.class);
+    }
+
 
 
 }

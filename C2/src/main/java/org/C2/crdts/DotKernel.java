@@ -5,19 +5,36 @@ import java.util.Map;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.C2.cloud.ConsistentHasher;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.C2.crdts.serializing.DotKernelSerializer;
+import org.C2.crdts.serializing.DotSerializer;
+@JsonSerialize(using = DotKernelSerializer.class)
 public class DotKernel {
     private Map<Dot, Integer> dotMap;
     private DotContext context;
+    private final ObjectMapper jsonMapper;
+
 
     public DotKernel() {
         this.dotMap = new HashMap<>();
         this.context = new DotContext();
+        this.jsonMapper = new ObjectMapper();
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(Dot.class, new DotSerializer());
+        this.jsonMapper.registerModule(module);
     }
 
     public DotKernel(DotContext context) {
         this.dotMap = new HashMap<>();
         this.context = context;
+        this.jsonMapper = new ObjectMapper();
+        SimpleModule module = new SimpleModule("DotSerializer", new Version(1, 0, 0, null, null, null));
+        module.addSerializer(Dot.class, new DotSerializer());
+        this.jsonMapper.registerModule(module);
     }
 
     public DotKernel deepCopy(){
@@ -111,15 +128,14 @@ public class DotKernel {
         return result;
     }
 
-    ObjectMapper mapper = new ObjectMapper();
-
     public String toJson() throws JsonProcessingException {
-        return mapper.writeValueAsString(this);
+        this.jsonMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        return this.jsonMapper.writeValueAsString(this);
     }
 
     public DotKernel fromJson(String json) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(json, DotKernel.class);
+        ObjectMapper jsonMapper = new ObjectMapper();
+        return jsonMapper.readValue(json, DotKernel.class);
     }
 
 

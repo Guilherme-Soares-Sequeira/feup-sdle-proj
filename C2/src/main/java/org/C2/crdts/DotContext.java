@@ -3,15 +3,19 @@ import java.util.*;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.C2.crdts.serializing.DotContextSerializer;
 
-
+@JsonSerialize(using = DotContextSerializer.class)
 public class DotContext {
     private Map<String, Integer> causalContext; // Compact causal context
     private Set<Dot> dotCloud; // Dot cloud
-
+    private final ObjectMapper jsonMapper;
     public DotContext() {
         this.causalContext = new HashMap<>();
         this.dotCloud = new HashSet<>();
+        this.jsonMapper = new ObjectMapper();
     }
 
     public Map<String, Integer> getCausalContext() {
@@ -108,9 +112,8 @@ public class DotContext {
     }
 
 
-    ObjectMapper mapper = new ObjectMapper();
     public String toJSON() throws JsonProcessingException {
-        return mapper.writeValueAsString(this);
+        return this.jsonMapper.writeValueAsString(this);
     }
 
     public static DotContext fromJSON(String json) throws JsonProcessingException {

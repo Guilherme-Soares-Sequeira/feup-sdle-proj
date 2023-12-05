@@ -10,7 +10,7 @@ public class Main {
         ORMap map1 = new ORMap("A");
         ORMap map2 = new ORMap("B");
         ORMap map3 = new ORMap("C");
-        ORMap map4 = new ORMap("C");
+        ORMap map4 = new ORMap("D");
 
 
         map1.insert("banana");

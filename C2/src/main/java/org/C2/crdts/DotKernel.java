@@ -32,7 +32,7 @@ public class DotKernel {
         return this.context;
     }
 
-    public void join(DotKernel other, String id){
+    public void join(DotKernel other, CCounter cCounter){
         Integer counter = 0;
         if(this == other) return;
 
@@ -55,15 +55,16 @@ public class DotKernel {
             }
         }
 
-        for(Map.Entry<Dot, Integer> entry: this.dotMap.entrySet()){
+        for(Map.Entry<Dot, Integer> entry: cCounter.getDotKernel().dotMap.entrySet()){
            counter+=entry.getValue();
         }
 
-       /* if (counter < 0) {
+        if (counter < 0) {
             Integer diff = -counter;
-
+            cCounter.inc(diff);
         }
-*/
+
+
         //check the dot with the biggest value in dotMap
         // when done checked, create new dot with the biggest value
         // add the new dot to the dotMap and delete the old dots

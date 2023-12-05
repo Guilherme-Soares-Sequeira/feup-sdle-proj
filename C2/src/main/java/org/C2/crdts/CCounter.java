@@ -45,7 +45,6 @@ public class CCounter {
 
     public CCounter inc(Integer value){
 
-        System.out.println("Incrementing " + this.id + " " + value);
         CCounter res = new CCounter(this.id);
         Set<Dot> dots = new HashSet<>();
         Integer base= 0;
@@ -78,7 +77,11 @@ public class CCounter {
             res.getDotKernel().join(this.dotKernel.remove(dot), this.id);
         }
         Integer dec=base-value;
-        if (dec < 0) dec = 0;
+        Integer total = this.value()+dec;
+        if(total < 0){
+            dec+= Math.abs(total);
+        }
+
         res.getDotKernel().join(this.dotKernel.add(this.id, dec), this.id);
 
         return res;
@@ -96,9 +99,7 @@ public class CCounter {
     public Integer value(){
         Integer res = 0;
         for(Map.Entry<Dot, Integer> entry: this.dotKernel.getDotMap().entrySet()){
-            if(entry.getKey().getReplicaID() == this.id){
                 res += entry.getValue();
-            }
         }
         return res;
     }

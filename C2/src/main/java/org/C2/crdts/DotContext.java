@@ -61,9 +61,7 @@ public class DotContext {
         }
     }
 
-
     public Dot makeDot(String id) {
-        System.out.println("Making dot for " + id);
         Integer existing = this.causalContext.get(id);
         if (existing != null) {
             this.causalContext.put(id, existing + 1);

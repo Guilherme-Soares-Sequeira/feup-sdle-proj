@@ -1,31 +1,58 @@
 package org.C2.crdts;
+
 import com.fasterxml.jackson.core.*;
+import org.json.JSONException;
+import org.json.JSONObject;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import netscape.javascript.JSObject;
 
 public class ORMapSerializer {
 
+    private JSONObject ormapJSON;
     public ORMapSerializer() {
-
+        this.ormapJSON = new JSONObject();
     }
 
-    public String serialize(ORMap map) throws JsonProcessingException {
-        System.out.println("Serializing ORMap");
-        System.out.println("Map: " + map);
-        return null;
+    public JSONObject serialize(ORMap map) throws JsonProcessingException, JSONException {
+        this.ormapJSON.put("id", map.id());
+        //TODO: serialize the rest of the map
+
+        return this.ormapJSON;
     }
+
     /* Note: keeping this for reference, but it's not used in the code.
-    ObjectMapper mapper = new ObjectMapper();
+    ORMap:
+        - Map (String, CCounter) map
+          - CCounter:
+            - DotKernel dorkernel:
+              - Map (Dot, Integer) dotMap
+                - Dot:
+                  - String replicaID
+                  - Integer: sequenceNumber
+                - DotContext context:
+                  - Map (String, Integer) causalContext
+                  - Set (Dot) dotcloud
+                    - Dot:
+                      - String replicaID
+                      - Integer: sequenceNumber
+              - DotContext context:
+                 - Map (String, Integer) causalContext
+                 - Set (Dot)
+                   - Dot:
+                     - String replicaID
+                     - Integer: sequenceNumber
+            - String id
 
-    public String toJson() throws JsonProcessingException {
-        return mapper.writeValueAsString(this);
-    }
+        - DotContext context:
+          - Map (String, Integer) causalContext
+          - Set (Dot)
+           - Dot:
+            - String replicaID
+            - Integer: sequenceNumber
 
-    public DotKernel fromJson(String json) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(json, DotKernel.class);
-    }
-    }*/
+        - String id
+    */
 
 
 }

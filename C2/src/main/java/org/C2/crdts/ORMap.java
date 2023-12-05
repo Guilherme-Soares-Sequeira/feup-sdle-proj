@@ -28,6 +28,9 @@ public class ORMap{
         return context;
     }
 
+    public String id(){
+        return id;
+    }
     public CCounter value(String id){
         return this.map.get(id);
     }

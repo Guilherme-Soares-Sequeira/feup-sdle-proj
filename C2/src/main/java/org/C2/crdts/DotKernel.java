@@ -20,6 +20,12 @@ public class DotKernel {
         this.context = context;
     }
 
+    public DotKernel deepCopy(){
+        DotKernel newDotKernel = new DotKernel();
+        newDotKernel.context = this.context.deepCopy();
+        newDotKernel.dotMap = new HashMap<>(this.dotMap);
+        return newDotKernel;
+    }
 
     public Map<Dot, Integer> getDotMap(){
         return this.dotMap;
@@ -29,7 +35,7 @@ public class DotKernel {
         return this.context;
     }
 
-    public void join(DotKernel other){
+    public void join(DotKernel other, String id){
         if(this == other) return;
 
         for(Map.Entry<Dot, Integer>  entry: this.dotMap.entrySet()){
@@ -54,22 +60,20 @@ public class DotKernel {
         //check the dot with the biggest value in dotMap
         // when done checked, create new dot with the biggest value
         // add the new dot to the dotMap and delete the old dots
-        Dot maxDot = null;
+
         Integer maxValue = 0;
         for(Map.Entry<Dot, Integer> entry: this.dotMap.entrySet()){
             if(entry.getValue() > maxValue){
                 maxValue = entry.getValue();
-                maxDot = entry.getKey();
             }
         }
-        if(maxDot != null){
-            this.dotMap.clear();
-            this.dotMap.put(maxDot, maxValue);
+        Dot newDot = this.context.makeDot(id);
 
-        }
+        this.dotMap.clear();
+        this.dotMap.put(newDot, maxValue);
 
 
-        //this.context.join(other.context);
+        this.context.join(other.context);
     }
 
     public DotKernel add (String id, Integer value){

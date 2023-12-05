@@ -2,6 +2,7 @@ package org.C2.crdts;
 
 import org.automerge.AmValue;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +39,14 @@ public class CCounter {
         return this.dotKernel.getContext();
     }
 
+    public CCounter deepCopy() {
+        CCounter newCCounter = new CCounter();
+        newCCounter.dotKernel = this.dotKernel.deepCopy();
+        newCCounter.id = this.id;
+        return newCCounter;
+    }
+
+
     public CCounter inc(Integer value){
 
         System.out.println("Incrementing " + this.id + " " + value);
@@ -51,9 +60,9 @@ public class CCounter {
             }
         }
         for(Dot dot: dots){
-            res.getDotKernel().join(this.dotKernel.remove(dot));
+            res.getDotKernel().join(this.dotKernel.remove(dot), this.id);
         }
-        res.getDotKernel().join(this.dotKernel.add(this.id, base+value));
+        res.getDotKernel().join(this.dotKernel.add(this.id, base+value), this.id);
 
         return res;
     }
@@ -70,11 +79,11 @@ public class CCounter {
             }
         }
         for(Dot dot: dots){
-            res.getDotKernel().join(this.dotKernel.remove(dot));
+            res.getDotKernel().join(this.dotKernel.remove(dot), this.id);
         }
         Integer dec=base-value;
         if (dec < 0) dec = 0;
-        res.getDotKernel().join(this.dotKernel.add(this.id, dec));
+        res.getDotKernel().join(this.dotKernel.add(this.id, dec), this.id);
 
         return res;
     }
@@ -85,7 +94,7 @@ public class CCounter {
         return res;
     }
     public void join (CCounter other) {
-        this.getDotKernel().join(other.getDotKernel());
+        this.getDotKernel().join(other.getDotKernel(), this.id);
     }
 
     public Integer value(){

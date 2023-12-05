@@ -6,6 +6,7 @@ import org.C2.crdts.CCounter;
 import org.C2.crdts.ORMap;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.annotation.*;
+import org.C2.crdts.ORMapSerializer;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,8 +32,11 @@ public class Main {
 
         map1.join(map2);
 
-        System.out.println(map1.value("banana").getContext().toJSON().toString());
+        System.out.println(map1.value("banana").getDotKernel().toJson());
 
+        ORMapSerializer serializer = new ORMapSerializer();
+        String serialized = serializer.serialize(map1);
+        System.out.println("Serialized: " + serialized);
         System.out.println("Map1 merged");
 
     }

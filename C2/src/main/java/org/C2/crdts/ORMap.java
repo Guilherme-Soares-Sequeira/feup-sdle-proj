@@ -87,21 +87,14 @@ public class ORMap{
 
     ObjectMapper mapper = new ObjectMapper();
 
-    public String toJson() {
-        try {
-            return mapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return "";
-        }
+
+    public String toJson() throws JsonProcessingException {
+        return mapper.writeValueAsString(this);
     }
 
-    public static ORMap fromJson(String json) {
-        try {
-            return new ObjectMapper().readValue(json, ORMap.class);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return null;
-        }
+    public ORMap fromJson(String json) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(json, ORMap.class);
     }
+
 }

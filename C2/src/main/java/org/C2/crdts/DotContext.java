@@ -1,11 +1,9 @@
 package org.C2.crdts;
 import java.util.*;
 import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.C2.crdts.serializing.DotContextSerializer;
+import org.C2.crdts.serializing.serializers.DotContextSerializer;
 
 @JsonSerialize(using = DotContextSerializer.class)
 public class DotContext {

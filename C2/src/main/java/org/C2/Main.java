@@ -1,16 +1,10 @@
 package org.C2;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.C2.crdts.CCounter;
 import org.C2.crdts.Dot;
 import org.C2.crdts.ORMap;
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.annotation.*;
-import org.C2.crdts.ORMapSerializer;
 import org.json.JSONException;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
@@ -37,11 +31,6 @@ public class Main {
 
         map1.join(map2);
 
-        System.out.println("printing dots:");
-        for(Map.Entry<Dot, Integer> entry: map1.value("banana").getDotKernel().getDotMap().entrySet())
-        {
-            System.out.println(entry.getKey().toJSON());
-        }
         System.out.println(map1.toJson());
 
 

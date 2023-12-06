@@ -1,13 +1,9 @@
 package org.C2.crdts;
 import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.C2.crdts.serializing.DotSerializer;
-
-import javax.print.attribute.standard.MediaSize;
+import org.C2.crdts.serializing.serializers.DotSerializer;
 
 @JsonSerialize(using = DotSerializer.class)
 public class Dot {

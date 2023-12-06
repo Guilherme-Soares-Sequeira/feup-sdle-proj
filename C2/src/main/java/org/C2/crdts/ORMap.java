@@ -1,16 +1,11 @@
 package org.C2.crdts;
-import org.C2.crdts.serializing.ORMapSerializer;
-import org.automerge.AmValue;
+import org.C2.crdts.serializing.serializers.ORMapSerializer;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @JsonSerialize(using = ORMapSerializer.class)

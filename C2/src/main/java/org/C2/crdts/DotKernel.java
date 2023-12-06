@@ -3,15 +3,12 @@ package org.C2.crdts;
 import java.util.HashMap;
 import java.util.Map;
 import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import org.C2.cloud.ConsistentHasher;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.C2.crdts.serializing.DotKernelSerializer;
-import org.C2.crdts.serializing.DotSerializer;
+import org.C2.crdts.serializing.serializers.DotKernelSerializer;
+import org.C2.crdts.serializing.serializers.DotSerializer;
 @JsonSerialize(using = DotKernelSerializer.class)
 public class DotKernel {
     private Map<Dot, Integer> dotMap;

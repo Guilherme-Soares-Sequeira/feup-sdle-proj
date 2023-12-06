@@ -1,15 +1,14 @@
-package org.C2.crdts.serializing;
+package org.C2.crdts.serializing.serializers;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 import org.C2.crdts.CCounter;
+import org.C2.crdts.serializing.SerializingConstants;
 
 import java.io.IOException;
 
-@JsonSerialize(using = CCounterSerializer.class)
 public class CCounterSerializer extends StdSerializer<CCounter> {
 
     public CCounterSerializer(Class<CCounter> t){

@@ -1,16 +1,16 @@
 package org.C2.crdts;
 
-import org.automerge.AmValue;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.C2.crdts.serializing.serializers.CCounterSerializer;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+@JsonSerialize(using = CCounterSerializer.class)
 
 public class CCounter {
     private DotKernel dotKernel;

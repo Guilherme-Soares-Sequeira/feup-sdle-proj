@@ -16,6 +16,8 @@ public class ORMap{
     private DotContext context;
     private String id;
 
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
+
     public ORMap(String id) {
         this.context = new DotContext();
         this.map = new HashMap<>();
@@ -94,11 +96,11 @@ public class ORMap{
         }
     }
 
-    ObjectMapper mapper = new ObjectMapper();
+
 
 
     public String toJson() throws JsonProcessingException {
-        return mapper.writeValueAsString(this);
+        return jsonMapper.writeValueAsString(this);
     }
 
     public ORMap fromJson(String json) throws JsonProcessingException {

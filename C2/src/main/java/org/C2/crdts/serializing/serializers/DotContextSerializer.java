@@ -38,6 +38,7 @@ public class DotContextSerializer extends StdSerializer<DotContext>{
         }).collect(Collectors.toList());
 
         gen.writeObjectField(SerializingConstants.DOT_CLOUD, dots);
+        gen.writeEndObject();
     }
 
 }

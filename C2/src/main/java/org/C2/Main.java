@@ -31,6 +31,7 @@ public class Main {
 
         map1.join(map2);
 
+        map1.erase("banana");
         System.out.println(map1.toJson());
 
 

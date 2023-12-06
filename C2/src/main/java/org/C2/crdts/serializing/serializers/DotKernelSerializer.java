@@ -38,6 +38,7 @@ public class DotKernelSerializer extends StdSerializer<DotKernel>{
 
         gen.writeObjectField(SerializingConstants.DOT_MAP, dots);
         gen.writeObjectField(SerializingConstants.CONTEXT, value.getContext());
+        gen.writeEndObject();
     }
 
 }

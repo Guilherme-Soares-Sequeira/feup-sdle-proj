@@ -22,9 +22,9 @@ public class ORMapSerializer extends StdSerializer<ORMap> {
     public void serialize(ORMap value, JsonGenerator gen, SerializerProvider provider) throws IOException {
         gen.writeStartObject();
         //for the dot kernel, call the DotKernelSerializer serializer
-        gen.writeStringField(SerializingConstants.ID, value.id());
+        gen.writeStringField(SerializingConstants.MAP_ID, value.id());
         gen.writeObjectField(SerializingConstants.MAP, value.map());
-        gen.writeObjectField(SerializingConstants.CONTEXT, value.context());
-
+        gen.writeObjectField(SerializingConstants.MAP_CONTEXT, value.context());
+        gen.writeEndObject();
     }
 }

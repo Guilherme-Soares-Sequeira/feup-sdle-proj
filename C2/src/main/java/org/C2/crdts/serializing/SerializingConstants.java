@@ -25,6 +25,8 @@ public class SerializingConstants {
     //ORMap
     public static final String MAP = "map";
 
+    public static final String MAP_ID = "itemID";
 
+    public static final String MAP_CONTEXT = "mapContext";
 
 }

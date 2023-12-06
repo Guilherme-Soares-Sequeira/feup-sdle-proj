@@ -24,6 +24,7 @@ public class CCounterSerializer extends StdSerializer<CCounter> {
         //for the dot kernel, call the DotKernelSerializer serializer
         gen.writeObjectField(SerializingConstants.DOT_KERNEL, value.getDotKernel());
         gen.writeStringField(SerializingConstants.ID, value.getId());
+        gen.writeEndObject();
 
     }
 }

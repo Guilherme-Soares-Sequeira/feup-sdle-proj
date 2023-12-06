@@ -16,4 +16,9 @@ public class JsonKeys {
      * Used for passing a shopping list's JSON representation in a String.
      */
     public static final String list = "list";
+
+    /**
+     * Used for passing information which will be used to send the information back to the LoadBalancer.
+     */
+    public static final String forId = "for";
 }

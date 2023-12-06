@@ -58,7 +58,7 @@ public class NodeServer implements SparkApplication {
         put("/external/ring", this::putExternalRing);
         get("/internal/shopping-list/:id", this::getInternalShoppingList);
         put("/internal/shopping-list/:id", this::putInternalShoppingList);
-        get("/external/shopping-list/:id", this::getExternalShoppingList);
+        get("/external/shopping-list/:id/:forId", this::getExternalShoppingList);
         put("/external/shopping-list/:id", this::putExternalShoppingList);
     }
 
@@ -119,7 +119,7 @@ public class NodeServer implements SparkApplication {
         String ringJson;
         try {
             ringJson = requestBody.getString(JsonKeys.ring);
-        } catch (Exception ignored)  {
+        } catch (Exception ignored) {
             final String errorString = "'ring' attribute not found in request.";
 
             this.logError(endpoint, errorString);
@@ -340,10 +340,7 @@ public class NodeServer implements SparkApplication {
 
                     OkHttpClient client = new OkHttpClient();
 
-                    okhttp3.Request request = new okhttp3.Request.Builder()
-                            .url(url)
-                            .get()
-                            .build();
+                    okhttp3.Request request = new okhttp3.Request.Builder().url(url).get().build();
 
 
                     try (okhttp3.Response nodeResp = client.newCall(request).execute()) {
@@ -395,7 +392,7 @@ public class NodeServer implements SparkApplication {
                         String listJson = responseJson.getString(JsonKeys.list);
 
                         // TODO: Change CRDT implementation
-                        MockCRDT crdt =  MockCRDT.fromJson(listJson);
+                        MockCRDT crdt = MockCRDT.fromJson(listJson);
                         responseList.add(crdt);
 
                         // TODO: Check if this doesn't impact performance too much
@@ -426,7 +423,7 @@ public class NodeServer implements SparkApplication {
             // ASOOM there is at least two...
             MockCRDT accum = responseList.get(0);
 
-            for (int i = 1; i < responseList.size(); i ++) {
+            for (int i = 1; i < responseList.size(); i++) {
                 accum.merge(responseList.get(i));
             }
 

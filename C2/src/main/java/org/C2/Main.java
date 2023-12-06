@@ -42,10 +42,9 @@ public class Main {
         {
             System.out.println(entry.getKey().toJSON());
         }
-        System.out.println(map1.value("banana").getDotKernel().toJson());
+        System.out.println(map1.toJson());
 
 
-        //System.out.println("Serialized: " + serializer.serialize(map1).toString());
         System.out.println("Map1 merged");
 
 /*

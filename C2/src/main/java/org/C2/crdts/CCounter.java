@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+
 public class CCounter {
     private DotKernel dotKernel;
     private String id;
@@ -33,6 +34,10 @@ public class CCounter {
 
     public DotKernel getDotKernel(){
         return this.dotKernel;
+    }
+
+    public String getId(){
+        return this.id;
     }
 
     public DotContext getContext(){

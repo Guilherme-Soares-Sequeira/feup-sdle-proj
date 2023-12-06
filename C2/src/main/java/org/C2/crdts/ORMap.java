@@ -1,4 +1,5 @@
 package org.C2.crdts;
+import org.C2.crdts.serializing.ORMapSerializer;
 import org.automerge.AmValue;
 
 import java.util.HashMap;
@@ -9,7 +10,10 @@ import java.util.Set;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+@JsonSerialize(using = ORMapSerializer.class)
 
 public class ORMap{
 
@@ -30,6 +34,10 @@ public class ORMap{
 
     public String id(){
         return id;
+    }
+
+    public Map<String, CCounter> map(){
+        return map;
     }
     public CCounter value(String id){
         return this.map.get(id);

@@ -29,6 +29,35 @@ public class ServerRequests {
         }
     }
 
+    // --------------------------------------------- GET /pulse --------------------------------------------------------
+    public static HttpResult<Void> checkPulse(ServerInfo serverInfo, int timeout) {
+        String url = format("http://{0}/pulse", serverInfo.fullRepresentation());
+
+        return checkPulse(url, timeout);
+    }
+
+    public static HttpResult<Void> checkPulse(String url, int timeout) {
+        OkHttpClient client = new OkHttpClient.Builder()
+                .connectTimeout(timeout, java.util.concurrent.TimeUnit.MILLISECONDS)
+                .readTimeout(timeout, java.util.concurrent.TimeUnit.MILLISECONDS)
+                .build();
+
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (response.code() == 200) return HttpResult.ok(response.code(), null);
+
+        } catch (Exception e) {
+            // do nothing
+        }
+
+        return HttpResult.err(999, "");
+    }
+
+
     // ----------------------------------------- GET /external/ring/ && /internal/ring/ --------------------------------
     // works for internal or external
     public static HttpResult<ConsistentHasher> getRing(ServerInfo serverInfo, boolean internal) {

@@ -43,6 +43,10 @@ public class ConsistentHasher  {
         return jsonMapper.readValue(json, ConsistentHasher.class);
     }
 
+    public static String virtualNodeKey(ServerInfo server, Integer virtualNodeId) {
+        return server.fullRepresentation() + "|" + virtualNodeId;
+    }
+
     /**
      * Constructs a default ConsistentHasher with no servers.
      * @param timestamp Defines how updated this ConsistentHasher is, in unix time (seconds since epoch).
@@ -90,7 +94,7 @@ public class ConsistentHasher  {
         this.serverToNumberOfVirtualNodes.put(server, numberOfVirtualNodes);
 
         for (int i = 0; i < numberOfVirtualNodes; i++) {
-            long hash = generateHash(server.fullRepresentation() + "|" + i);
+            long hash = generateHash(virtualNodeKey(server, i));
             ring.put(hash, server);
         }
     }
@@ -204,6 +208,18 @@ public class ConsistentHasher  {
         return tailMap.isEmpty() ? ring.firstKey() : tailMap.firstKey();
     }
 
+    public long getFirstToken(TreeSet<Long> matches, String key) {
+        long initialToken = generateHash(key);
+        if (matches.contains(initialToken)) return initialToken;
+
+        long token = getNextToken(initialToken);
+
+        while (true) {
+            if (matches.contains(token)) return token;
+            token = getNextToken(token);
+        }
+    }
+
     /**
      * Starting from the hash of the given key, finds the n first servers found clockwise. If a virtual node of a server
      * that has already been added to the list is found, it is skipped, in order to always have n different servers.
@@ -239,7 +255,7 @@ public class ConsistentHasher  {
      * @param key Input key.
      * @return The hash generated for the key.
      */
-    private long generateHash(String key) {
+    public long generateHash(String key) {
         md.reset();
         md.update(key.getBytes());
         byte[] digest = md.digest();

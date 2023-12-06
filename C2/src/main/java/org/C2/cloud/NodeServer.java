@@ -18,9 +18,7 @@ import static java.text.MessageFormat.format;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import java.util.concurrent.*;
 
@@ -31,7 +29,9 @@ public class NodeServer implements SparkApplication {
     private final boolean seed;
     private ConsistentHasher ring;
     private final int numberOfVirtualNodes;
-    private KVStore kvstore;
+    private final KVStore kvstore;
+    private final Map<Long, Set<String>> virtualNodesLists;
+    private final Map<Integer, Long> tokens;
 
     public NodeServer(String identifier, int port, boolean seed, int numberOfVirtualNodes) {
         this.serverInfo = new ServerInfo(identifier, port);
@@ -43,6 +43,16 @@ public class NodeServer implements SparkApplication {
         this.kvstore = new KVStore("kvstore/" + this.serverInfo.identifier() + this.serverInfo.port().toString(), true);
 
         this.numberOfVirtualNodes = numberOfVirtualNodes;
+
+        this.tokens = new HashMap<>();
+        this.virtualNodesLists = new HashMap<>();
+
+        for (int i = 0; i < this.numberOfVirtualNodes; i++) {
+            long virtualNodeToken = this.ring.generateHash(ConsistentHasher.virtualNodeKey(this.serverInfo, i));
+
+            this.tokens.put(i, virtualNodeToken);
+            this.virtualNodesLists.put(virtualNodeToken, new TreeSet<>());
+        }
     }
 
     public void init() {
@@ -53,6 +63,7 @@ public class NodeServer implements SparkApplication {
     }
 
     private void defineRoutes() {
+        get("/pulse", this::pulse);
         get("/internal/ring", this::getInternalRing);
         get("/external/ring", this::getExternalRing);
         put("/external/ring", this::putExternalRing);
@@ -60,6 +71,11 @@ public class NodeServer implements SparkApplication {
         put("/internal/shopping-list/:id", this::putInternalShoppingList);
         get("/external/shopping-list/:id/:forId", this::getExternalShoppingList);
         put("/external/shopping-list/:id", this::putExternalShoppingList);
+    }
+
+    private String pulse(Request req, Response res) {
+        res.status(200);
+        return "";
     }
 
     private String getInternalRing(Request req, Response res) {
@@ -243,6 +259,10 @@ public class NodeServer implements SparkApplication {
 
         if (internalListOpt.isEmpty()) {
             this.kvstore.put(listID, receivedListJson);
+
+            long responsibleVirtualNodeToken = this.ring.getFirstToken(new TreeSet<>(this.tokens.values()), listID);
+            this.virtualNodesLists.get(responsibleVirtualNodeToken).add(listID);
+
             res.status(201);
 
             return response.toString();

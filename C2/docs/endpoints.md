@@ -10,6 +10,28 @@ may also be accessed by other nodes when redirecting a write request.
 All input and output is done via JSON.
 
 # Endpoints
+
+## /pulse
+
+### GET
+
+#### Request Structure
+
+N/A
+
+#### Responses
+
+##### 200 - OK
+
+###### Body
+
+N/A
+
+#### Use Cases
+
+- Check if node is reachable.
+- When performing READs or WRITEs, the node responsible for handling the request must select the first N reachable nodes. In order to know if the node is reachable or not, the coordinator checks its pulse.
+
 ## /internal/ring
 
 ### GET

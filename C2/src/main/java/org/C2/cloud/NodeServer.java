@@ -3,10 +3,7 @@ package org.C2.cloud;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import okhttp3.OkHttpClient;
 import org.C2.cloud.database.KVStore;
-import org.C2.utils.ConsistentHashingParameters;
-import org.C2.utils.JsonKeys;
-import org.C2.utils.MockCRDT;
-import org.C2.utils.ServerInfo;
+import org.C2.utils.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -21,10 +18,14 @@ import java.time.Instant;
 import java.util.*;
 
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static spark.Spark.*;
 
 public class NodeServer implements SparkApplication {
+
+    private static final Integer pulseTimeout = 400;
     private final ServerInfo serverInfo;
     private final boolean seed;
     private ConsistentHasher ring;
@@ -64,13 +65,36 @@ public class NodeServer implements SparkApplication {
 
     private void defineRoutes() {
         get("/pulse", this::pulse);
+
         get("/internal/ring", this::getInternalRing);
         get("/external/ring", this::getExternalRing);
         put("/external/ring", this::putExternalRing);
+
         get("/internal/shopping-list/:id", this::getInternalShoppingList);
         put("/internal/shopping-list/:id", this::putInternalShoppingList);
+
         get("/external/shopping-list/:id/:forId", this::getExternalShoppingList);
         put("/external/shopping-list/:id", this::putExternalShoppingList);
+    }
+
+    private List<ServerInfo> getHealthyServers(List<ServerInfo> haystack, Integer n) {
+        Boolean[] status = new Boolean[haystack.size()];
+
+        CompletableFuture<?>[] futures = IntStream.range(0, haystack.size())
+                .mapToObj(i -> CompletableFuture.runAsync(() -> {
+                    HttpResult<Void> res = ServerRequests.checkPulse(haystack.get(i), NodeServer.pulseTimeout);
+                    status[i] = res.isOk();
+                }))
+                .toArray(CompletableFuture[]::new);
+
+        // Wait for all promises to complete
+        CompletableFuture.allOf(futures).join();
+
+        return IntStream.range(0, haystack.size())
+                .filter(i -> status[i])
+                .mapToObj(haystack::get)
+                .limit(n)
+                .collect(Collectors.toList());
     }
 
     private String pulse(Request req, Response res) {

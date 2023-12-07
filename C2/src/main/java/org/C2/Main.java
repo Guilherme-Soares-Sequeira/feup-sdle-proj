@@ -31,9 +31,18 @@ public class Main {
 
         map1.join(map2);
 
-        map1.erase("banana");
-        System.out.println(map1.toJson());
+        //map1.erase("banana");
+        //System.out.println(map1.value("banana").getDotKernel().getDotMap());
 
+        for(Map.Entry<Dot, Integer> entry : map1.value("banana").getDotKernel().getDotMap().entrySet()) {
+            System.out.println("Serializing...");
+            String json = entry.getKey().toJSON();
+            System.out.println(json);
+
+            System.out.println("Deserializing...");
+            Dot dot = Dot.fromJSON(json);
+            dot.print();
+        }
 
         System.out.println("Map1 merged");
 

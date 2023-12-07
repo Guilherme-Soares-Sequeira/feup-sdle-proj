@@ -1,11 +1,14 @@
 package org.C2.crdts;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.C2.crdts.serializing.deserializers.DotDeserializer;
 import org.C2.crdts.serializing.serializers.DotSerializer;
 
 @JsonSerialize(using = DotSerializer.class)
+@JsonDeserialize(using = DotDeserializer.class)
 public class Dot {
     private final String replicaID;
     private final int sequenceNumber;
@@ -40,5 +43,9 @@ public class Dot {
     }
 
 
+    public void print() {
+        System.out.println("Replica ID: " + this.replicaID);
+        System.out.println("Sequence Number: " + this.sequenceNumber);
+    }
 }
 

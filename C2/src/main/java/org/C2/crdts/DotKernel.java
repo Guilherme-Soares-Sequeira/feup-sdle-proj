@@ -142,10 +142,14 @@ public class DotKernel {
         return this.jsonMapper.writeValueAsString(this);
     }
 
-    public DotKernel fromJson(String json) throws JsonProcessingException {
+    public static DotKernel fromJson(String json) throws JsonProcessingException {
         ObjectMapper jsonMapper = new ObjectMapper();
         return jsonMapper.readValue(json, DotKernel.class);
     }
 
+    public void print(){
+        System.out.println("Dot map: " + this.dotMap);
+        this.context.print();
+    }
 
 }

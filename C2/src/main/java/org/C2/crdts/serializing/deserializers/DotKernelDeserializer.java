@@ -28,20 +28,14 @@ public class DotKernelDeserializer extends StdDeserializer<DotKernel> {
     @Override
     public DotKernel deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
         JsonNode node = jsonParser.getCodec().readTree(jsonParser);
-      /*  DotKernel dotKernel = new DotKernel();
-
-        // Deserialize the dotMap
         Map<Dot, Integer> dotMap = new HashMap<>();
-        Iterator<Map.Entry<String, JsonNode>> dotMapElements = node.get(SerializingConstants.DOT_MAP).fields();
-        while (dotMapElements.hasNext()) {
-            Map.Entry<String, JsonNode> dotMapElement = dotMapElements.next();
-            String[] dotParts = dotMapElement.getKey().split("-");
-            String replicaID = dotParts[0];
-            int sequenceNumber = Integer.parseInt(dotParts[1]);
-            Dot dot = new Dot(replicaID, sequenceNumber);
-            dotMap.put(dot, dotMapElement.getValue().get("dotValue").asText());
+        for(JsonNode dotNode : node.get(SerializingConstants.DOT_MAP)){
+            String replicaID = dotNode.get(SerializingConstants.REPLICA_ID).asText();
+            int sequenceNumber = dotNode.get(SerializingConstants.SEQUENCE_NUMBER).asInt();
+            int dotValue = dotNode.get("dotValue").asInt();
+            dotMap.put(new Dot(replicaID, sequenceNumber), dotValue);
         }
-*/
-        return null;
+        DotContext context = jsonParser.getCodec().treeToValue(node.get(SerializingConstants.CONTEXT), DotContext.class);
+        return new DotKernel(context, dotMap);
     }
 }

@@ -30,6 +30,7 @@ public class ServerRequests {
     }
 
     // --------------------------------------------- GET /pulse --------------------------------------------------------
+
     public static HttpResult<Void> checkPulse(ServerInfo serverInfo, int timeout) {
         String url = format("http://{0}/pulse", serverInfo.fullRepresentation());
 

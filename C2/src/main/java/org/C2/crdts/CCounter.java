@@ -34,6 +34,11 @@ public class CCounter {
         this.id = id;
     }
 
+    public CCounter(String id, DotKernel dotKernel){
+        this.dotKernel = dotKernel;
+        this.id = id;
+    }
+
     public DotKernel getDotKernel(){
         return this.dotKernel;
     }
@@ -125,4 +130,8 @@ public class CCounter {
         return mapper.readValue(json, CCounter.class);
     }
 
+    public void print() {
+        System.out.println("CCounter: " + this.id + " " + this.value());
+        this.dotKernel.print();
+    }
 }

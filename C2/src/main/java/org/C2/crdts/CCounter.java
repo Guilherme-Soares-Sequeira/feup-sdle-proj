@@ -1,6 +1,8 @@
 package org.C2.crdts;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.C2.crdts.serializing.deserializers.CCounterDeserializer;
 import org.C2.crdts.serializing.serializers.CCounterSerializer;
 
 import java.util.HashSet;
@@ -11,7 +13,7 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @JsonSerialize(using = CCounterSerializer.class)
-
+@JsonDeserialize(using = CCounterDeserializer.class)
 public class CCounter {
     private DotKernel dotKernel;
     private String id;

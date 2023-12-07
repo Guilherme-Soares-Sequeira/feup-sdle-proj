@@ -2,10 +2,13 @@ package org.C2.crdts;
 import java.util.*;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.C2.crdts.serializing.deserializers.DotContextDeserializer;
 import org.C2.crdts.serializing.serializers.DotContextSerializer;
 
 @JsonSerialize(using = DotContextSerializer.class)
+@JsonDeserialize(using = DotContextDeserializer.class)
 public class DotContext {
     private Map<String, Integer> causalContext; // Compact causal context
     private Set<Dot> dotCloud; // Dot cloud
@@ -13,6 +16,12 @@ public class DotContext {
     public DotContext() {
         this.causalContext = new HashMap<>();
         this.dotCloud = new HashSet<>();
+        this.jsonMapper = new ObjectMapper();
+    }
+
+    public DotContext(Map<String, Integer> causalContext, Set<Dot> dotCloud) {
+        this.causalContext = causalContext;
+        this.dotCloud = dotCloud;
         this.jsonMapper = new ObjectMapper();
     }
 

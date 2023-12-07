@@ -2,6 +2,7 @@ package org.C2;
 
 
 import org.C2.crdts.Dot;
+import org.C2.crdts.DotContext;
 import org.C2.crdts.ORMap;
 import org.json.JSONException;
 
@@ -32,18 +33,14 @@ public class Main {
         map1.join(map2);
 
         //map1.erase("banana");
-        //System.out.println(map1.value("banana").getDotKernel().getDotMap());
 
-        for(Map.Entry<Dot, Integer> entry : map1.value("banana").getDotKernel().getDotMap().entrySet()) {
-            System.out.println("Serializing...");
-            String json = entry.getKey().toJSON();
-            System.out.println(json);
+        System.out.println("Serializing...");
+        String serialized = map1.value("banana").getDotKernel().getContext().toJSON();
+        System.out.println(serialized);
+        System.out.println("Deserializing...");
 
-            System.out.println("Deserializing...");
-            Dot dot = Dot.fromJSON(json);
-            dot.print();
-        }
-
+        DotContext deserialized = DotContext.fromJSON(serialized);
+        deserialized.print();
         System.out.println("Map1 merged");
 
 /*

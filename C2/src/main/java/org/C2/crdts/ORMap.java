@@ -1,4 +1,6 @@
 package org.C2.crdts;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.C2.crdts.serializing.deserializers.ORMapDeserializer;
 import org.C2.crdts.serializing.serializers.ORMapSerializer;
 
 import java.util.HashMap;
@@ -9,7 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @JsonSerialize(using = ORMapSerializer.class)
-
+@JsonDeserialize(using = ORMapDeserializer.class)
 public class ORMap{
 
     private Map<String, CCounter> map;

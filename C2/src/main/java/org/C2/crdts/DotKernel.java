@@ -5,11 +5,14 @@ import java.util.Map;
 import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.C2.crdts.serializing.deserializers.DotKernelDeserializer;
 import org.C2.crdts.serializing.serializers.DotKernelSerializer;
 import org.C2.crdts.serializing.serializers.DotSerializer;
 @JsonSerialize(using = DotKernelSerializer.class)
+@JsonDeserialize(using = DotKernelDeserializer.class)
 public class DotKernel {
     private Map<Dot, Integer> dotMap;
     private DotContext context;
@@ -27,6 +30,15 @@ public class DotKernel {
 
     public DotKernel(DotContext context) {
         this.dotMap = new HashMap<>();
+        this.context = context;
+        this.jsonMapper = new ObjectMapper();
+        SimpleModule module = new SimpleModule("DotSerializer", new Version(1, 0, 0, null, null, null));
+        module.addSerializer(Dot.class, new DotSerializer());
+        this.jsonMapper.registerModule(module);
+    }
+
+    public DotKernel(DotContext context, Map<Dot, Integer> dotMap) {
+        this.dotMap = dotMap;
         this.context = context;
         this.jsonMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule("DotSerializer", new Version(1, 0, 0, null, null, null));

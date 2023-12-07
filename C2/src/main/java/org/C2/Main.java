@@ -33,11 +33,11 @@ public class Main {
         //map1.erase("banana");
 
         System.out.println("Serializing...");
-        String serialized = map1.value("banana").toJson();
+        String serialized = map1.toJson();
         System.out.println(serialized);
         System.out.println("Deserializing...");
-        CCounter cc = CCounter.fromJson(serialized);
-        cc.print();
+        ORMap or = ORMap.fromJson(serialized);
+        or.printOrMap();
         System.out.println("Map1 merged");
 
 /*

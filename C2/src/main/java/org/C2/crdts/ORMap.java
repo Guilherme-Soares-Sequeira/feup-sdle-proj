@@ -26,6 +26,11 @@ public class ORMap{
         this.id = id;
     }
 
+    public ORMap(String id, Map<String, CCounter> map, DotContext context) {
+        this.context = context;
+        this.map = map;
+        this.id = id;
+    }
 
     public DotContext context(){
         return context;
@@ -105,9 +110,15 @@ public class ORMap{
         return jsonMapper.writeValueAsString(this);
     }
 
-    public ORMap fromJson(String json) throws JsonProcessingException {
+    public static ORMap fromJson(String json) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         return mapper.readValue(json, ORMap.class);
     }
 
+    public void printOrMap(){
+        System.out.println("ORMap: " + this.id);
+        System.out.println("Context: " + this.context);
+        System.out.println("Map: " + this.map);
+
+    }
 }

@@ -23,7 +23,10 @@ public class ShoppingListUI extends JFrame {
         this.itemNameField = new JTextField(UIConstants.ITEM_NAME_TEXT_FIELD_COLS);
 
         this.itemListPanel = new JPanel();
-        this.itemListPanel.setLayout(new BoxLayout(itemListPanel, BoxLayout.Y_AXIS));
+
+        GridLayout layout = new GridLayout(10, 1, 2, 2);
+
+        this.itemListPanel.setLayout(new BoxLayout(this.itemListPanel, BoxLayout.Y_AXIS));
 
         this.addButton = this.createButton(UIConstants.ADD_ITEM_BUTTON_TEXT, UIConstants.FONT_ARIAL);
         this.addButton.addActionListener(e -> this.addItem());
@@ -33,12 +36,15 @@ public class ShoppingListUI extends JFrame {
         Container container = getContentPane();
         container.setLayout(new BorderLayout());
         container.add(this.addItemPanel, BorderLayout.NORTH);
-        container.add(new JScrollPane(this.itemListPanel), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(this.itemListPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        container.add(scrollPane, BorderLayout.CENTER);
 
         setTitle("Shopping List Application");
         setSize(1280, 720);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        setResizable(false);
         setVisible(true);
     }
 
@@ -67,18 +73,6 @@ public class ShoppingListUI extends JFrame {
         return button;
     }
 
-    private void loadAddButton() {
-        addButton.setBackground(Color.WHITE);
-        addButton.setForeground(Color.BLACK);
-        addButton.setBorder(new CompoundBorder(
-                BorderFactory.createLineBorder(Color.BLACK),
-                BorderFactory.createEmptyBorder(5, 10, 5, 10)
-        ));
-        addButton.setFont(new Font("Arial", Font.BOLD, 14));
-        addButton.setFocusPainted(false);
-        addButton.addActionListener(e -> addItem());
-    }
-
     private void addItem() {
         String itemName = itemNameField.getText().trim();
 
@@ -93,22 +87,20 @@ public class ShoppingListUI extends JFrame {
         itemListPanel.removeAll();
 
         for (Map.Entry<String, Integer> entry : shoppingList.entrySet()) {
-            JPanel itemContainer = new JPanel(new BorderLayout()); // Use BorderLayout for alignment
+            JPanel itemContainer = new JPanel(new BorderLayout());
 
             String itemName = entry.getKey();
             int quantity = entry.getValue();
 
-            // Left side: item name
             JLabel nameLabel = new JLabel(itemName);
             JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
             leftPanel.add(nameLabel);
             itemContainer.add(leftPanel, BorderLayout.WEST);
 
-            // Right side: quantity and buttons
             JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
             JLabel quantityLabel = new JLabel("Quantity: " + quantity);
-            JButton incrementButton = new JButton("+");
-            JButton decrementButton = new JButton("-");
+            JButton incrementButton = this.createButton("+", UIConstants.FONT_MONOSPACED);
+            JButton decrementButton = this.createButton("-", UIConstants.FONT_MONOSPACED);
 
             incrementButton.addActionListener(createIncrementActionListener(itemName));
             decrementButton.addActionListener(createDecrementActionListener(itemName, quantity));
@@ -118,6 +110,7 @@ public class ShoppingListUI extends JFrame {
             rightPanel.add(decrementButton);
             itemContainer.add(rightPanel, BorderLayout.EAST);
 
+            itemContainer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
             itemListPanel.add(itemContainer);
         }
 

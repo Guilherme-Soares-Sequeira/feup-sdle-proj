@@ -10,37 +10,29 @@ import java.util.Map;
 
 public class ShoppingListUI extends JFrame {
     private Map<String, Integer> shoppingList;
-
     private JTextField itemNameField;
     private JButton addButton;
+
+    private JPanel addItemPanel;
     private JPanel itemListPanel;
 
-    private void init() {
-        this.shoppingList = new HashMap<>();
-        this.itemNameField = new JTextField(20);
-        this.itemListPanel = new JPanel();
-        this.addButton = new JButton("ADD");
-    }
-
     public ShoppingListUI() {
-        this.init();
+        this.shoppingList = new HashMap<>();
 
-        this.loadAddButton();
+        this.addItemPanel = new JPanel();
+        this.itemNameField = new JTextField(UIConstants.ITEM_NAME_TEXT_FIELD_COLS);
 
+        this.itemListPanel = new JPanel();
         this.itemListPanel.setLayout(new BoxLayout(itemListPanel, BoxLayout.Y_AXIS));
 
-        JPanel panel = new JPanel();
-        JLabel itemNameLabel = new JLabel("Item name: ");
+        this.addButton = this.createButton(UIConstants.ADD_ITEM_BUTTON_TEXT, UIConstants.FONT_ARIAL);
+        this.addButton.addActionListener(e -> this.addItem());
 
-        itemNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        panel.add(itemNameLabel);
-        panel.setBackground(Color.LIGHT_GRAY);
-        panel.add(this.itemNameField);
-        panel.add(this.addButton);
+        this.loadAddItemComponent();
 
         Container container = getContentPane();
         container.setLayout(new BorderLayout());
-        container.add(panel, BorderLayout.NORTH);
+        container.add(this.addItemPanel, BorderLayout.NORTH);
         container.add(new JScrollPane(this.itemListPanel), BorderLayout.CENTER);
 
         setTitle("Shopping List Application");
@@ -48,6 +40,31 @@ public class ShoppingListUI extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    private void loadAddItemComponent() {
+        JLabel itemNameLabel = new JLabel(UIConstants.ITEM_NAME_TEXT_FIELD_TEXT);
+        itemNameLabel.setFont(new Font(UIConstants.FONT_ARIAL, Font.BOLD, 14));
+
+        this.addItemPanel.add(itemNameLabel);
+        this.addItemPanel.setBackground(Color.LIGHT_GRAY);
+        this.addItemPanel.add(this.itemNameField);
+        this.addItemPanel.add(this.addButton);
+    }
+
+    private JButton createButton(String text, String font) {
+        JButton button = new JButton(text);
+
+        button.setBackground(Color.WHITE);
+        button.setForeground(Color.BLACK);
+        button.setBorder(new CompoundBorder(
+                BorderFactory.createLineBorder(Color.BLACK),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        button.setFont(new Font(font, Font.BOLD, 14));
+        button.setFocusPainted(false);
+
+        return button;
     }
 
     private void loadAddButton() {

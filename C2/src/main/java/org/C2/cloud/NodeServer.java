@@ -23,25 +23,20 @@ import java.util.stream.IntStream;
 
 import static spark.Spark.*;
 
-public class NodeServer implements SparkApplication {
+public class NodeServer extends BaseServer {
 
-    private static final Integer pulseTimeout = 400;
-    private final ServerInfo serverInfo;
     private final boolean seed;
-    private ConsistentHasher ring;
     private final int numberOfVirtualNodes;
-    private final KVStore kvstore;
     private final Map<Long, Set<String>> virtualNodesLists;
     private final Map<Integer, Long> vnodeTokens;
 
     public NodeServer(String identifier, int port, boolean seed, int numberOfVirtualNodes) {
-        this.serverInfo = new ServerInfo(identifier, port);
+        super(identifier, port);
         this.seed = seed;
 
         // if server is not a seed server make it so this consistent hasher is considered outdated
         this.ring = new ConsistentHasher(this.seed ? Instant.now().getEpochSecond() : 0);
 
-        this.kvstore = new KVStore("kvstore/" + this.serverInfo.identifier() + this.serverInfo.port().toString(), true);
 
         this.numberOfVirtualNodes = numberOfVirtualNodes;
 
@@ -56,6 +51,7 @@ public class NodeServer implements SparkApplication {
         }
     }
 
+    @Override
     public void init() {
         this.ring.addServer(this.serverInfo, this.numberOfVirtualNodes);
 
@@ -64,23 +60,15 @@ public class NodeServer implements SparkApplication {
             long responsibleVnodeToken = this.ring.getFirstMatchedToken(new TreeSet<>(this.vnodeTokens.values()), list);
             this.virtualNodesLists.get(responsibleVnodeToken).add(list);
         }
-        if (!this.seed) this.querySeeds();
-
 
         port(this.serverInfo.port());
         this.defineRoutes();
+
+        if (!this.seed) this.querySeeds();
     }
 
-    private void querySeeds() {
-        for (var seedInfo : SeedServers.SEEDS_INFO) {
-            HttpResult<ConsistentHasher> result = ServerRequests.getRing(seedInfo, true);
-            if (!result.isOk()) continue;
-
-            this.updateRingIfMoreRecent(result.get());
-        }
-    }
-
-    private void defineRoutes() {
+    @Override
+    protected void defineRoutes() {
         get("/pulse", this::pulse);
 
         get("/internal/ring", this::getInternalRing);
@@ -92,31 +80,6 @@ public class NodeServer implements SparkApplication {
 
         get("/external/shopping-list/:id/:forId", this::getExternalShoppingList);
         put("/external/shopping-list/:id", this::putExternalShoppingList);
-    }
-
-    private List<ServerInfo> getHealthyServers(List<ServerInfo> haystack, Integer n) {
-        Boolean[] status = new Boolean[haystack.size()];
-
-        CompletableFuture<?>[] futures = IntStream.range(0, haystack.size())
-                .mapToObj(i -> CompletableFuture.runAsync(() -> {
-                    HttpResult<Void> res = ServerRequests.checkPulse(haystack.get(i), NodeServer.pulseTimeout);
-                    status[i] = res.isOk();
-                }))
-                .toArray(CompletableFuture[]::new);
-
-        // Wait for all promises to complete
-        CompletableFuture.allOf(futures).join();
-
-        return IntStream.range(0, haystack.size())
-                .filter(i -> status[i])
-                .mapToObj(haystack::get)
-                .limit(n)
-                .collect(Collectors.toList());
-    }
-
-    private String pulse(Request req, Response res) {
-        res.status(200);
-        return "";
     }
 
     private String getInternalRing(Request req, Response res) {
@@ -505,29 +468,5 @@ public class NodeServer implements SparkApplication {
 
         // TODO: implement this route
         return null;
-    }
-
-
-    /**
-     * Checks if internal ring is older than the received one and if it
-     *
-     * @param newRing ConsistentHasher that will replace current ring if current ring is older
-     * @return True if ring was updated, false otherwise
-     */
-    private boolean updateRingIfMoreRecent(ConsistentHasher newRing) {
-        if (this.ring.olderThan(newRing)) {
-            this.ring = newRing;
-            return true;
-        }
-        return false;
-    }
-
-    private void logWarning(String endpoint, String message) {
-        System.out.println(format("[WARNING] {0}: {1}", endpoint, message));
-    }
-
-    private void logError(String endpoint, String message) {
-        System.err.println(format("[ERROR] {0}: {1}", endpoint, message));
-
     }
 }

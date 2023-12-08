@@ -45,7 +45,15 @@ public class NodeServerTest {
 
         String url = "http://localhost:4444/internal/ring";
 
+        var pulse = ServerRequests.checkPulse("http://localhost:4444", 5000);
+
+        System.out.println(format("pulse = {0}", pulse.isOk()));
+
         HttpResult<ConsistentHasher> result = ServerRequests.getRing(url);
+
+        if (!result.isOk()) {
+            System.err.println(result.errorMessage());
+        }
 
         Assertions.assertTrue(result.isOk());
         Assertions.assertEquals(200, result.code());

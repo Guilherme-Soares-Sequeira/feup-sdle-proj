@@ -74,6 +74,7 @@ public class ServerRequests {
     }
 
     public static HttpResult<ConsistentHasher> getRing(String url) {
+        System.out.println("url = " + url);
 
         // Build Request
         Request request = new Request.Builder().url(url).get().build();

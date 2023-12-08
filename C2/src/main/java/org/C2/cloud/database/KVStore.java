@@ -29,6 +29,18 @@ public class KVStore {
             this.logger = Logger.getLogger(KVStore.class.getName());
             this.setupLog();
         }
+
+        Path path = Paths.get(directory);
+
+        if (!Files.exists(path)) {
+            try {
+                // Create the directory
+                Files.createDirectories(path);
+                System.out.println("Directory created: " + path);
+            } catch (Exception e) {
+                this.logger.log(Level.SEVERE, "Couldn't create directory: " + e);
+            }
+        }
     }
 
     public List<String> getLists() {

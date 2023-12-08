@@ -1,11 +1,10 @@
 package org.C2.ui;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,8 +18,8 @@ public class ShoppingListUI extends JFrame {
     private void init() {
         this.shoppingList = new HashMap<>();
         this.itemNameField = new JTextField(20);
-        this.addButton = new JButton("ADD");
         this.itemListPanel = new JPanel();
+        this.addButton = new JButton("ADD");
     }
 
     public ShoppingListUI() {
@@ -28,21 +27,21 @@ public class ShoppingListUI extends JFrame {
 
         this.loadAddButton();
 
-        itemListPanel.setLayout(new BoxLayout(itemListPanel, BoxLayout.Y_AXIS));
+        this.itemListPanel.setLayout(new BoxLayout(itemListPanel, BoxLayout.Y_AXIS));
 
         JPanel panel = new JPanel();
         JLabel itemNameLabel = new JLabel("Item name: ");
 
-        itemNameLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        itemNameLabel.setFont(new Font("Arial", Font.BOLD, 14));
         panel.add(itemNameLabel);
         panel.setBackground(Color.LIGHT_GRAY);
-        panel.add(itemNameField);
-        panel.add(addButton);
+        panel.add(this.itemNameField);
+        panel.add(this.addButton);
 
         Container container = getContentPane();
         container.setLayout(new BorderLayout());
         container.add(panel, BorderLayout.NORTH);
-        container.add(new JScrollPane(itemListPanel), BorderLayout.CENTER);
+        container.add(new JScrollPane(this.itemListPanel), BorderLayout.CENTER);
 
         setTitle("Shopping List Application");
         setSize(1280, 720);
@@ -52,9 +51,12 @@ public class ShoppingListUI extends JFrame {
     }
 
     private void loadAddButton() {
-        addButton.setBackground(new Color(35, 112, 199));
-        addButton.setForeground(Color.WHITE);
-        addButton.setBorderPainted(false);
+        addButton.setBackground(Color.WHITE);
+        addButton.setForeground(Color.BLACK);
+        addButton.setBorder(new CompoundBorder(
+                BorderFactory.createLineBorder(Color.BLACK),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
         addButton.setFont(new Font("Arial", Font.BOLD, 14));
         addButton.setFocusPainted(false);
         addButton.addActionListener(e -> addItem());
@@ -74,28 +76,32 @@ public class ShoppingListUI extends JFrame {
         itemListPanel.removeAll();
 
         for (Map.Entry<String, Integer> entry : shoppingList.entrySet()) {
-            JPanel itemPanel = new JPanel();
-            itemPanel.setLayout(new FlowLayout());
+            JPanel itemContainer = new JPanel(new BorderLayout()); // Use BorderLayout for alignment
 
             String itemName = entry.getKey();
             int quantity = entry.getValue();
 
+            // Left side: item name
             JLabel nameLabel = new JLabel(itemName);
-            JLabel quantityLabel = new JLabel("Quantity: " + quantity); // Display quantity
+            JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            leftPanel.add(nameLabel);
+            itemContainer.add(leftPanel, BorderLayout.WEST);
 
-            itemPanel.add(nameLabel);
-            itemPanel.add(quantityLabel);
-
+            // Right side: quantity and buttons
+            JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            JLabel quantityLabel = new JLabel("Quantity: " + quantity);
             JButton incrementButton = new JButton("+");
-            incrementButton.addActionListener(createIncrementActionListener(itemName));
-
             JButton decrementButton = new JButton("-");
+
+            incrementButton.addActionListener(createIncrementActionListener(itemName));
             decrementButton.addActionListener(createDecrementActionListener(itemName, quantity));
 
-            itemPanel.add(incrementButton);
-            itemPanel.add(decrementButton);
+            rightPanel.add(quantityLabel);
+            rightPanel.add(incrementButton);
+            rightPanel.add(decrementButton);
+            itemContainer.add(rightPanel, BorderLayout.EAST);
 
-            itemListPanel.add(itemPanel);
+            itemListPanel.add(itemContainer);
         }
 
         itemListPanel.revalidate();
@@ -103,34 +109,23 @@ public class ShoppingListUI extends JFrame {
     }
 
     private ActionListener createIncrementActionListener(String itemName) {
-        return new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int currentQuantity = shoppingList.get(itemName);
-                shoppingList.put(itemName, currentQuantity + 1);
+        return e -> {
+            int currentQuantity = shoppingList.get(itemName);
+            shoppingList.put(itemName, currentQuantity + 1);
+            updateItemList();
+        };
+    }
+
+    private ActionListener createDecrementActionListener(String itemName, int currentQuantity) {
+        return e -> {
+            if (currentQuantity > 0) {
+                shoppingList.put(itemName, currentQuantity - 1);
                 updateItemList();
             }
         };
     }
 
-    private ActionListener createDecrementActionListener(String itemName, int currentQuantity) {
-        return new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (currentQuantity > 0) {
-                    shoppingList.put(itemName, currentQuantity - 1);
-                    updateItemList();
-                }
-            }
-        };
-    }
-
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new ShoppingListUI();
-            }
-        });
+        SwingUtilities.invokeLater(ShoppingListUI::new);
     }
 }

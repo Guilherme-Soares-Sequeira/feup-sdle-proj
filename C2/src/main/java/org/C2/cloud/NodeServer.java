@@ -341,9 +341,12 @@ public class NodeServer extends BaseServer {
 
         res.status(202);
 
+
         // run this in parallel because we want to return 202 ASAP
         CompletableFuture.runAsync(() -> {
-            var servers = this.ring.getServers(listID, ConsistentHashingParameters.N);
+
+            var servers = this.ring.getServers(listID, ConsistentHashingParameters.PriorityListLength);
+            servers = this.getHealthyServers(servers, ConsistentHashingParameters.N);
 
             List<CompletableFuture<String>> futures = new ArrayList<>();
 
@@ -381,6 +384,7 @@ public class NodeServer extends BaseServer {
                         } catch (Exception e) {
                             //do nothing
                             this.logWarning(endpoint, "Tried to update ring with response's ring but an error occurred.");
+                            throw new RuntimeException("Tried to update ring with response's ring but an error occurred.");
                         }
 
                         return respJson.getString(JsonKeys.list);

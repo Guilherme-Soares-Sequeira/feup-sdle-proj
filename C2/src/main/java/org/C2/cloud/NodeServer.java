@@ -32,7 +32,7 @@ public class NodeServer implements SparkApplication {
     private final int numberOfVirtualNodes;
     private final KVStore kvstore;
     private final Map<Long, Set<String>> virtualNodesLists;
-    private final Map<Integer, Long> tokens;
+    private final Map<Integer, Long> vnodeTokens;
 
     public NodeServer(String identifier, int port, boolean seed, int numberOfVirtualNodes) {
         this.serverInfo = new ServerInfo(identifier, port);
@@ -45,13 +45,13 @@ public class NodeServer implements SparkApplication {
 
         this.numberOfVirtualNodes = numberOfVirtualNodes;
 
-        this.tokens = new HashMap<>();
+        this.vnodeTokens = new HashMap<>();
         this.virtualNodesLists = new HashMap<>();
 
         for (int i = 0; i < this.numberOfVirtualNodes; i++) {
             long virtualNodeToken = this.ring.generateHash(ConsistentHasher.virtualNodeKey(this.serverInfo, i));
 
-            this.tokens.put(i, virtualNodeToken);
+            this.vnodeTokens.put(i, virtualNodeToken);
             this.virtualNodesLists.put(virtualNodeToken, new TreeSet<>());
         }
     }
@@ -59,8 +59,25 @@ public class NodeServer implements SparkApplication {
     public void init() {
         this.ring.addServer(this.serverInfo, this.numberOfVirtualNodes);
 
+        var lists = this.kvstore.getLists();
+        for (var list : lists) {
+            long responsibleVnodeToken = this.ring.getFirstMatchedToken(new TreeSet<>(this.vnodeTokens.values()), list);
+            this.virtualNodesLists.get(responsibleVnodeToken).add(list);
+        }
+        if (!this.seed) this.querySeeds();
+
+
         port(this.serverInfo.port());
         this.defineRoutes();
+    }
+
+    private void querySeeds() {
+        for (var seedInfo : SeedServers.SEEDS_INFO) {
+            HttpResult<ConsistentHasher> result = ServerRequests.getRing(seedInfo, true);
+            if (!result.isOk()) continue;
+
+            this.updateRingIfMoreRecent(result.get());
+        }
     }
 
     private void defineRoutes() {
@@ -284,7 +301,7 @@ public class NodeServer implements SparkApplication {
         if (internalListOpt.isEmpty()) {
             this.kvstore.put(listID, receivedListJson);
 
-            long responsibleVirtualNodeToken = this.ring.getFirstToken(new TreeSet<>(this.tokens.values()), listID);
+            long responsibleVirtualNodeToken = this.ring.getFirstMatchedToken(new TreeSet<>(this.vnodeTokens.values()), listID);
             this.virtualNodesLists.get(responsibleVirtualNodeToken).add(listID);
 
             res.status(201);

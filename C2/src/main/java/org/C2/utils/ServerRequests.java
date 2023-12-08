@@ -11,11 +11,17 @@ import org.json.JSONTokener;
 
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static java.text.MessageFormat.format;
 
 public class ServerRequests {
-    private static final OkHttpClient client = new OkHttpClient();
+    public static final Integer timeout = 500;
+    private static final OkHttpClient client = new OkHttpClient.Builder()
+            .connectTimeout(timeout, TimeUnit.MILLISECONDS)
+            .readTimeout(timeout, TimeUnit.MILLISECONDS)
+            .writeTimeout(timeout, TimeUnit.MILLISECONDS)
+            .build();
 
     @NotNull
     private static <T> HttpResult<T> httpErrorFromResponse(Response response) {

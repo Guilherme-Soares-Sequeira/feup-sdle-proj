@@ -4,14 +4,17 @@ import org.json.JSONException;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+
 
 public class KVStore {
     private final String directory;
@@ -24,17 +27,42 @@ public class KVStore {
 
         if (this.logging) {
             this.logger = Logger.getLogger(KVStore.class.getName());
-            this.setuplog();
+            this.setupLog();
         }
     }
 
-    private void setuplog() {
+    public List<String> getLists() {
+        List<String> lists = new ArrayList<>();
+        try {
+            Files.walkFileTree(Paths.get(directory), EnumSet.noneOf(FileVisitOption.class), 1,
+                    new SimpleFileVisitor<Path>() {
+                        @Override
+                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                            if (Files.isRegularFile(file)) {
+                                String fileName = file.getFileName().toString();
+                                int lastDotIndex = fileName.lastIndexOf('.');
+                                if (lastDotIndex > 0) {
+                                    lists.add(fileName.substring(0, lastDotIndex));
+                                }
+                            }
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+
+            return lists;
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't read local lists: " + e);
+        }
+    }
+
+    private void setupLog() {
         try {
             FileHandler filehandler = new FileHandler("kvstore.log", true);
             filehandler.setFormatter(new SimpleFormatter());
 
             this.logger.addHandler(filehandler);
-        } catch (IOException ignored) {}
+        } catch (IOException ignored) {
+        }
     }
 
     public Optional<String> get(String key) {

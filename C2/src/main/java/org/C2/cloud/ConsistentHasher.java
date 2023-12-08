@@ -208,7 +208,7 @@ public class ConsistentHasher  {
         return tailMap.isEmpty() ? ring.firstKey() : tailMap.firstKey();
     }
 
-    public long getFirstToken(TreeSet<Long> matches, String key) {
+    public long getFirstMatchedToken(TreeSet<Long> matches, String key) {
         long initialToken = generateHash(key);
         if (matches.contains(initialToken)) return initialToken;
 

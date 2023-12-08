@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,23 +16,26 @@ public class ShoppingListUI extends JFrame {
     private JButton addButton;
     private JPanel itemListPanel;
 
-    public ShoppingListUI() {
-        shoppingList = new HashMap<>();
+    private void init() {
+        this.shoppingList = new HashMap<>();
+        this.itemNameField = new JTextField(20);
+        this.addButton = new JButton("ADD");
+        this.itemListPanel = new JPanel();
+    }
 
-        itemNameField = new JTextField(20);
-        addButton = new JButton("Add");
-        itemListPanel = new JPanel();
+    public ShoppingListUI() {
+        this.init();
+
+        this.loadAddButton();
+
         itemListPanel.setLayout(new BoxLayout(itemListPanel, BoxLayout.Y_AXIS));
 
-        addButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                addItem();
-            }
-        });
-
         JPanel panel = new JPanel();
-        panel.add(new JLabel("Item name:"));
+        JLabel itemNameLabel = new JLabel("Item name: ");
+
+        itemNameLabel.setFont(new Font("Times New Roman", Font.BOLD, 14));
+        panel.add(itemNameLabel);
+        panel.setBackground(Color.LIGHT_GRAY);
         panel.add(itemNameField);
         panel.add(addButton);
 
@@ -44,6 +49,15 @@ public class ShoppingListUI extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    private void loadAddButton() {
+        addButton.setBackground(new Color(35, 112, 199));
+        addButton.setForeground(Color.WHITE);
+        addButton.setBorderPainted(false);
+        addButton.setFont(new Font("Arial", Font.BOLD, 14));
+        addButton.setFocusPainted(false);
+        addButton.addActionListener(e -> addItem());
     }
 
     private void addItem() {

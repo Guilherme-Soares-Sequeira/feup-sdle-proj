@@ -1,6 +1,7 @@
 package org.C2.crdts;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class DotKernel {
@@ -32,19 +33,22 @@ public class DotKernel {
         return this.context;
     }
 
-    public void join(DotKernel other, CCounter cCounter){
-        Integer counter = 0;
+
+    public void join(DotKernel other){
         if(this == other) return;
 
-        for(Map.Entry<Dot, Integer>  entry: this.dotMap.entrySet()){
+        Iterator<Map.Entry<Dot, Integer>> iterator = this.dotMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Dot, Integer> entry = iterator.next();
             Dot dot = entry.getKey();
-            Integer value = other.dotMap.get(entry.getKey());
-            if (value == null) {  // Only in this
-                if(other.context.containsDot(dot)){
-                    this.dotMap.remove(dot);
+            Integer value = other.dotMap.get(dot);
+            if (value == null) {
+                if (other.context.containsDot(dot)) {
+                    iterator.remove();
                 }
             }
         }
+
         for(Map.Entry<Dot, Integer> entryOther : other.dotMap.entrySet()) {
             Dot dot = entryOther.getKey();
             Integer value = this.dotMap.get(entryOther.getKey());
@@ -55,14 +59,6 @@ public class DotKernel {
             }
         }
 
-        for(Map.Entry<Dot, Integer> entry: cCounter.getDotKernel().dotMap.entrySet()){
-           counter+=entry.getValue();
-        }
-
-        if (counter < 0) {
-            Integer diff = -counter;
-            cCounter.inc(diff);
-        }
 
 
         //check the dot with the biggest value in dotMap

@@ -1,27 +1,24 @@
 package org.C2.crdts;
 import org.automerge.AmValue;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 public class ORMap{
 
     private Map<String, CCounter> map;
-    private DotContext context;
+    private ORMapHelper dotKernel;
     private String id;
 
     public ORMap(String id) {
-        this.context = new DotContext();
+        this.dotKernel = new ORMapHelper();
         this.map = new HashMap<>();
         this.id = id;
     }
 
 
     public DotContext context(){
-        return context;
+        return dotKernel.getContext();
     }
 
     public CCounter value(String id){
@@ -31,54 +28,88 @@ public class ORMap{
     public boolean insert(String id) {
         CCounter res = this.map.get(id);
         if (res == null) {
-            this.map.put(id, new CCounter(this.id, this.context.deepCopy()));
+            this.map.put(id, new CCounter(this.id, this.dotKernel.getContext().deepCopy()));
+            this.dotKernel.add(id, this.id);
             return true;
         }
+
+
         return false;
     }
+
+    public boolean insertFromOther(String id, Dot dot) {
+        CCounter res = this.map.get(id);
+        if (res == null) {
+            this.map.put(id, new CCounter(this.id, this.dotKernel.getContext().deepCopy()));
+            this.dotKernel.addFromOther(id, dot);
+            return true;
+        }
+
+        this.dotKernel.addFromOther(id, dot);
+
+        return false;
+    }
+
 
     public ORMap erase(String itemId){
         ORMap result = new ORMap(itemId);
         if(this.map.containsKey(itemId)){
             CCounter counter;
             counter = this.map.get(itemId).reset();
-            result.context = counter.getContext();
+            result.dotKernel.setContext( counter.getContext());
             this.map.remove(itemId);
-        }
+            this.dotKernel.remove(itemId);
+            }
         return result;
     }
 
 
     public void join(ORMap other){
-        DotContext immutableContext = this.context.deepCopy();
+        DotContext immutableContext = this.dotKernel.getContext().deepCopy();
         for(Map.Entry<String, CCounter> entry : other.map.entrySet()){
+            Dot otherDot = other.dotKernel.getDotMap().get(entry.getKey());
             CCounter res = this.map.get(entry.getKey());
             if(res == null) {
-                this.insert(entry.getKey());
-                this.map.get(entry.getKey()).join(entry.getValue());
-            }
-            else{
 
-                this.map.get(entry.getKey()).join(entry.getValue());
+                if(!this.dotKernel.getContext().containsDot(otherDot)) {
+                    this.insertFromOther(entry.getKey(), otherDot);
+                    this.map.get(entry.getKey()).join(entry.getValue());
+                }
             }
-            this.context= immutableContext;
+            else{ // object in both
+                Dot localDot = this.dotKernel.getDotMap().get(entry.getKey());
+                if(otherDot == localDot) { // same object
+                    this.map.get(entry.getKey()).join(entry.getValue());
+                    this.dotKernel.joinContext(other.dotKernel);
+                }
+                else if (this.dotKernel.getContext().containsDot(otherDot)) {  // local object is newer
+
+                    // do nothing
+                }
+                else if (other.dotKernel.getContext().containsDot(localDot) ){ // other object is newer
+
+                    this.map.replace(entry.getKey(), entry.getValue());
+                    this.dotKernel.getDotMap().replace(entry.getKey(), otherDot);
+                }
+                else{       // completely different objects
+
+                    if( this.map.get(entry.getKey()).value() < other.map.get(entry.getKey()).value() ){  // Keep the biggest value
+                        this.map.replace(entry.getKey(), entry.getValue());
+                        this.dotKernel.getDotMap().replace(entry.getKey(), otherDot);
+                    }
+                }
+            }
+            this.dotKernel.setContext(immutableContext);
         }
         for(Map.Entry<String, CCounter> entry : this.map.entrySet()){
+            Dot dot = this.dotKernel.getDotMap().get(entry.getKey());
             if(!other.map.containsKey(entry.getKey())){
-                CCounter empty = new CCounter(this.id, other.context);
-                entry.getValue().join(empty);
-                this.context = immutableContext;
+                if(other.dotKernel.getContext().containsDot(dot)){
+                    this.erase(entry.getKey());
+                }
             }
         }
-
-
-        this.context.join(other.context);
-
+        this.dotKernel.getContext().join(other.dotKernel.getContext());
     }
 
-    public void print(){
-        for(Map.Entry<String, CCounter> entry : this.map.entrySet()){
-            System.out.println(entry.getKey() + " : " + entry.getValue().value());
-        }
-    }
 }

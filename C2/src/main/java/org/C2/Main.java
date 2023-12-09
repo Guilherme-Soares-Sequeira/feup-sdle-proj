@@ -3,6 +3,10 @@ package org.C2;
 
 import org.C2.crdts.CCounter;
 import org.C2.crdts.ORMap;
+import org.C2.utils.Pair;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
@@ -29,10 +33,14 @@ public class Main {
 */
 
       map1.insert("banana");
-      map1.value("banana").inc(16);
-      map2.join(map1);
+      map1.value("banana").inc(10);
+      map2.insert("banana");
       map2.value("banana").inc(16);
       map1.join(map2);
+      map1.insert("apple");
+        map1.value("apple").inc(3);
+      List<Pair<String, Integer>> res = new ArrayList<>();
+      res = map1.read();
     }
 }
 

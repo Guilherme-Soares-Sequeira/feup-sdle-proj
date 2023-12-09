@@ -1,4 +1,5 @@
 package org.C2.crdts;
+import org.C2.utils.Pair;
 import org.automerge.AmValue;
 
 import java.util.*;
@@ -111,5 +112,16 @@ public class ORMap{
         }
         this.dotKernel.getContext().join(other.dotKernel.getContext());
     }
+
+    public List<Pair<String, Integer>> read(){
+
+        List<Pair<String, Integer>> res = new ArrayList<>();
+        for (Map.Entry<String, CCounter> entry : this.map.entrySet()) {
+            res.add(new Pair<>(entry.getKey(), entry.getValue().value()));
+        }
+        return res;
+    }
+
+
 
 }

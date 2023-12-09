@@ -11,21 +11,17 @@ import java.util.Objects;
 
 public class ShoppingListUI extends JFrame {
     private final Map<String, Integer> shoppingList;
-    private final JTextField itemNameField;
-    private JButton addButton;
+    private JTextField itemNameField;
 
+    private JButton addButton;
     private JButton pullButton;
     private JButton pushButton;
 
-    private final JPanel addItemPanel;
-    private final JPanel itemListPanel;
+    private JPanel addItemPanel;
+    private JPanel itemListPanel;
 
     public ShoppingListUI() {
         this.shoppingList = new HashMap<>();
-        this.addItemPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        this.itemNameField = new JTextField(UIConstants.ITEM_NAME_TEXT_FIELD_COLS);
-        this.itemListPanel = new JPanel();
-        this.itemListPanel.setLayout(new BoxLayout(this.itemListPanel, BoxLayout.Y_AXIS));
 
         this.loadButtons();
         this.loadIcons();
@@ -33,25 +29,21 @@ public class ShoppingListUI extends JFrame {
 
         this.loadComponents();
 
-        Container container = getContentPane();
-        container.setLayout(new BorderLayout());
-        container.add(this.addItemPanel, BorderLayout.NORTH);
-
-        JScrollPane scrollPane = new JScrollPane(this.itemListPanel);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-
-        container.add(scrollPane, BorderLayout.CENTER);
-
-        setTitle("Shopping List Application");
-        setSize(1280, 720);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setResizable(false);
-        setVisible(true);
+        this.loadFrameProperties();
     }
 
     private void loadComponents() {
         this.loadAddItemComponent();
+        this.loadItemListComponent();
+    }
+
+    private void loadFrameProperties() {
+        super.setTitle("Shopping List Application");
+        super.setSize(1280, 720);
+        super.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        super.setLocationRelativeTo(null);
+        super.setResizable(false);
+        super.setVisible(true);
     }
 
     private void loadButtons() {
@@ -61,16 +53,33 @@ public class ShoppingListUI extends JFrame {
     }
 
     private void loadAddItemComponent() {
+        this.addItemPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        this.addItemPanel.setBackground(Color.LIGHT_GRAY);
+
+        this.itemNameField = new JTextField(UIConstants.ITEM_NAME_TEXT_FIELD_COLS);
+
         JLabel itemNameLabel = new JLabel(UIConstants.ITEM_NAME_TEXT_FIELD_TEXT);
         itemNameLabel.setFont(new Font(UIConstants.FONT_ARIAL, Font.BOLD, 14));
-
-        this.addItemPanel.setBackground(Color.LIGHT_GRAY);
 
         this.addItemPanel.add(itemNameLabel);
         this.addItemPanel.add(this.itemNameField);
         this.addItemPanel.add(this.addButton);
         this.addItemPanel.add(this.pullButton);
         this.addItemPanel.add(this.pushButton);
+    }
+
+    private void loadItemListComponent() {
+        this.itemListPanel = new JPanel();
+        this.itemListPanel.setLayout(new BoxLayout(this.itemListPanel, BoxLayout.Y_AXIS));
+
+        Container container = getContentPane();
+        container.setLayout(new BorderLayout());
+        container.add(this.addItemPanel, BorderLayout.NORTH);
+
+        JScrollPane scrollPane = new JScrollPane(this.itemListPanel);
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        container.add(scrollPane, BorderLayout.CENTER);
     }
 
     private void loadIcons() {

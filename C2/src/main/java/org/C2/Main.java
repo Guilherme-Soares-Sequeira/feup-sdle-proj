@@ -12,16 +12,25 @@ public class Main {
         ORMap map3 = new ORMap("C");
         ORMap map4 = new ORMap("D");
 
+/*
+       map1.insert("banana");
+       map1.value("banana").inc(10);
+       map2.join(map1);
+       map3.join(map1);
+       map3.value("banana").inc(1);
+       map1.join(map3);
+       map1.join(map2);
+       map4.join(map1);
+       map4.erase("banana");
+       map4.insert("banana");
+       map4.value("banana").inc(3);
+       map1.join(map4);
 
-        map1.insert("banana");
-        map1.value("banana").inc(2);
-        map2.join(map1);
-        map2.value("banana").dec(2);
-        map3.join(map1);
-        map3.value("banana").dec(2);
-        map4.join(map2);
-        map4.join(map3);
-        System.out.println(map4.value("banana").value());
+*/
+
+      map2.insert("banana");
+      map2.value("banana").inc(10);
+      map1.join(map2);
     }
 }
 

@@ -161,7 +161,7 @@ public class ServerRequests {
     // --------------------------------------- GET /internal/shopping-list/ --------------------------------------------
 
     public static HttpResult<ShoppingListReturn> getInternalShoppingList(ServerInfo serverInfo, String listId) {
-        String url = format("http://{0}/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
+        String url = format("http://{0}/internal/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
 
         return getInternalShoppingList(url);
     }
@@ -210,7 +210,7 @@ public class ServerRequests {
     // --------------------------------------------- PUT /internal/shopping-list/ --------------------------------------
 
     public static HttpResult<Void> putInternalShoppingList(ServerInfo serverInfo, String listId, MockCRDT toPut, ConsistentHasher gossipCH) {
-        String url = format("http://{0}/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
+        String url = format("http://{0}/internal/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
 
         return putInternalShoppingList(url, toPut, gossipCH);
     }
@@ -232,7 +232,7 @@ public class ServerRequests {
     }
 
     public static HttpResult<Void> putInternalShoppingList(ServerInfo serverInfo, String listId, String toPutJson, ConsistentHasher gossipCH) {
-        String url = format("http://{0}/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
+        String url = format("http://{0}/internal/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
 
         String chJson;
         try {
@@ -268,7 +268,7 @@ public class ServerRequests {
     // -------------------------------------- GET /external/shopping-list/ ---------------------------------------------
 
     public static HttpResult<Void> getExternalShoppingList(ServerInfo serverInfo, String listId, String forId) {
-        String url = format("http://{0}/shopping-list/{1}/{2}", serverInfo.fullRepresentation(), listId, forId);
+        String url = format("http://{0}/external/shopping-list/{1}/{2}", serverInfo.fullRepresentation(), listId, forId);
 
         return getExternalShoppingList(url);
     }
@@ -290,13 +290,13 @@ public class ServerRequests {
     // ------------------------------------ PUT /external/shopping-list/ -----------------------------------------------
 
     public static HttpResult<Void> putExternalShoppingList(ServerInfo serverInfo, String listId, String crdtJson, String forId) {
-        String url = format("http://{0}/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
+        String url = format("http://{0}/exernal/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
 
         return putExternalShoppingList(url, crdtJson, forId);
     }
 
     public static HttpResult<Void> putExternalShoppingList(ServerInfo serverInfo, String listId, MockCRDT toPut, String forId) {
-        String url = format("http://{0}/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
+        String url = format("http://{0}/external/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
 
         return putExternalShoppingList(url, toPut, forId);
     }

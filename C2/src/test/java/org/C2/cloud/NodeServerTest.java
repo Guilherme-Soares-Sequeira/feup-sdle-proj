@@ -67,7 +67,6 @@ public class NodeServerTest {
 
     @Test
     public void getExternalRingTest() throws Exception {
-        OkHttpClient client = new OkHttpClient();
         String url = "http://localhost:4444/external/ring";
 
         HttpResult<ConsistentHasher> result = ServerRequests.getRing(url);
@@ -80,7 +79,6 @@ public class NodeServerTest {
         System.out.println(format("Received ring json = {0}", received.toJson()));
     }
 
-    // this should fail for now
     @Test
     public void putExternalRingTest() throws Exception {
         ConsistentHasher putRing = new ConsistentHasher(9999);

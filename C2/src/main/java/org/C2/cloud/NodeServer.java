@@ -74,6 +74,7 @@ public class NodeServer extends BaseServer {
 
         get("/external/shopping-list/:id/:forId", this::getExternalShoppingList);
         put("/external/shopping-list/:id", this::putExternalShoppingList);
+
     }
 
     private String getInternalRing(Request req, Response res) {

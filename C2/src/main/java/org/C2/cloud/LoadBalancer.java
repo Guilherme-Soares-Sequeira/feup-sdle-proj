@@ -1,115 +1,138 @@
 package org.C2.cloud;
-import org.C2.cloud.SeedServers;
-import org.C2.utils.JsonKeys;
-import org.C2.utils.ServerInfo;
+import org.C2.utils.*;
 import org.json.JSONObject;
 import spark.Request;
 import spark.Response;
 
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.*;
 
-import static java.text.MessageFormat.format;
 import static spark.Spark.*;
 
-
-public class LoadBalancer {
-
-    private List<ServerInfo> servers;
+public class LoadBalancer extends BaseServer {
+    private ConsistentHasher ring;
 
     // Timeout for requests to the servers
-    private final int TIMEOUT_MS = 5000;
+    private final int TIMEOUT_MS = 1000;
 
+    private final Map<String, RequestStatus> requestStatusMap;
+    private final Map<String, String> requestedLists;
 
-    public LoadBalancer() {
-        this.servers = SeedServers.SEEDS_INFO;
-        requestEndpoints();
+    public LoadBalancer(String identifier, int port) {
+        super(identifier, port);
+        this.requestStatusMap = new HashMap<>();
+        this.requestedLists = new HashMap<>();
     }
 
-    public ServerInfo getServer() {
-        // get the list of servers from the seed servers
-        servers = SeedServers.SEEDS_INFO;
-        // get a random server from the list of servers
-        Random rand = new Random();
-        int randomIndex = rand.nextInt(this.servers.size());
-        ServerInfo randomServer = this.servers.get(randomIndex);
-        // return the random server
-        return randomServer;
+    @Override
+    public void init() {
+        this.querySeeds();
+        defineRoutes();
     }
 
-    protected void requestEndpoints(){
+    @Override
+    protected void defineRoutes() {
         get("/read/:id", this::read);
         put("/write/:id", this::write);
+    }
+
+    private ServerInfo getRandomServer() {
+        //get all servers
+        List<ServerInfo> servers = new ArrayList<>(this.ring.getAllServers());
+
+        Random random = new Random();
+        int randomIndex = random.nextInt(servers.size());
+
+        return servers.get(randomIndex);
     }
 
     private String read(Request req, Response res) {
         final JSONObject response = new JSONObject();
         final String endpoint = "GET /read/{ID}";
 
-        //Get ID
-        String id = req.params(":id");
+        // get the random server
+        ServerInfo serverInfo = getRandomServer();
 
-        //Get server
-        ServerInfo server = getServer();
+        // get the id
+        String listID = req.params(":id");
 
-        //Send read request to the selected server
-        CompletableFuture<String> readResult = CompletableFuture.supplyAsync(() -> {
-            return sendReadRequest(server, id);
-        });
+        if (listID == null) {
+            final String errorString = "Could not get id from request";
 
-        try{
-            //Get the result with timeout
-            String result = readResult.get(TIMEOUT_MS, TimeUnit.MILLISECONDS);
-            res.status(202);
-            return result;
-        } catch(InterruptedException | ExecutionException | TimeoutException e){
-            res.status(500);
-            response.put("Error Message", format("Error while processing {0}: {1}", endpoint, e.getMessage()));
+            this.logError(endpoint, errorString);
+
+            res.status(400);
+            response.put(JsonKeys.errorMessage, errorString);
+
             return response.toString();
         }
 
+        String forID = generateRandomId();
+
+        HttpResult<Void> result = ServerRequests.getExternalShoppingList(serverInfo, listID, forID);
+
+        if (!result.isOk()) {
+            response.put(JsonKeys.errorMessage, result.errorMessage());
+            res.status(result.code());
+            return response.toString();
+        }
+
+        this.requestStatusMap.put(forID, RequestStatus.PROCESSING);
+
+        res.status(result.code());
+        return "";
     }
 
     private String write(Request req, Response res) {
         final JSONObject response = new JSONObject();
         final String endpoint = "PUT /write/{ID}";
 
-        // Get ID and data for write
-        String id = req.params(":id");
-        String data = req.body();
+        // get the random server
+        ServerInfo serverInfo = getRandomServer();
 
-        // Get server
-        ServerInfo server = getServer();
+        // get the id
+        String listID = req.params(":id");
 
-        // Send write request to the selected server
-        CompletableFuture<String> writeResult = CompletableFuture.supplyAsync(() -> {
-            return sendWriteRequest(server, id, data);
-        });
+        if (listID == null) {
+            final String errorString = "Could not get id from request";
 
-        try{
-            // Get the result with timeout
-            String result = writeResult.get(TIMEOUT_MS, TimeUnit.MILLISECONDS);
-            res.status(202);
-            return result;
-        } catch(InterruptedException | ExecutionException | TimeoutException e){
-            res.status(500);
-            response.put("Error Message", format("Error while processing {0}: {1}", endpoint, e.getMessage()));
+            this.logError(endpoint, errorString);
+
+            res.status(400);
+            response.put(JsonKeys.errorMessage, errorString);
+
             return response.toString();
         }
+
+        String receivedListJson = req.attribute(JsonKeys.list);
+        if (receivedListJson == null) {
+            String errmsg = "The received list is invalid.";
+
+            this.logError(endpoint, errmsg);
+            res.status(400);
+            response.put(JsonKeys.errorMessage, errmsg);
+
+            return response.toString();
+        }
+
+        String forID = generateRandomId();
+
+        HttpResult<Void> result = ServerRequests.putExternalShoppingList(serverInfo, listID, receivedListJson, forID);
+
+        if (!result.isOk()) {
+            response.put(JsonKeys.errorMessage, result.errorMessage());
+            res.status(result.code());
+            return response.toString();
+        }
+
+        this.requestStatusMap.put(forID, RequestStatus.PROCESSING);
+
+        res.status(result.code());
+        return "";
     }
 
-    private String sendWriteRequest(ServerInfo server, String id, String data) {
-        //TODO: Implement
-        return null;
-    }
-
-    private String sendReadRequest(ServerInfo server, String id) {
-        //TODO: Implement
-        return null;
+    private String generateRandomId() {
+        UUID uuid = UUID.randomUUID();
+        return uuid.toString();
     }
 
 }

@@ -18,4 +18,9 @@ public record UIConstants() {
     public static final String FONT_ARIAL = "Arial";
 
     public static final String FONT_MONOSPACED = "Monospaced";
+
+    public static final String ICON_ADD_PATH = "/icons/add24.png";
+    public static final String ICON_PULL_PATH = "/icons/download24.png";
+    public static final String ICON_PUSH_PATH = "/icons/upload24.png";
+
 }

@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -11,37 +12,34 @@ import java.util.Objects;
 public class ShoppingListUI extends JFrame {
     private final Map<String, Integer> shoppingList;
     private final JTextField itemNameField;
-    private final JButton addButton;
+    private JButton addButton;
 
-    private final JButton pullButton;
-    private final JButton pushButton;
+    private JButton pullButton;
+    private JButton pushButton;
 
     private final JPanel addItemPanel;
     private final JPanel itemListPanel;
 
     public ShoppingListUI() {
         this.shoppingList = new HashMap<>();
-
         this.addItemPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-
         this.itemNameField = new JTextField(UIConstants.ITEM_NAME_TEXT_FIELD_COLS);
-
         this.itemListPanel = new JPanel();
-
         this.itemListPanel.setLayout(new BoxLayout(this.itemListPanel, BoxLayout.Y_AXIS));
 
-        this.addButton = this.createButton(UIConstants.ADD_ITEM_BUTTON_TEXT, UIConstants.FONT_MONOSPACED);
-        this.addButton.addActionListener(e -> this.addItem());
-        this.pullButton = this.createButton(UIConstants.PULL_BUTTON_TEXT, UIConstants.FONT_MONOSPACED);
-        this.pushButton = this.createButton(UIConstants.PUSH_BUTTON_TEXT, UIConstants.FONT_MONOSPACED);
+        this.loadButtons();
+        this.loadIcons();
+        this.loadActionListeners();
 
-        this.loadAddItemComponent();
+        this.loadComponents();
 
         Container container = getContentPane();
         container.setLayout(new BorderLayout());
         container.add(this.addItemPanel, BorderLayout.NORTH);
+
         JScrollPane scrollPane = new JScrollPane(this.itemListPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
         container.add(scrollPane, BorderLayout.CENTER);
 
         setTitle("Shopping List Application");
@@ -52,26 +50,39 @@ public class ShoppingListUI extends JFrame {
         setVisible(true);
     }
 
+    private void loadComponents() {
+        this.loadAddItemComponent();
+    }
+
+    private void loadButtons() {
+        this.addButton = this.createButton(UIConstants.ADD_ITEM_BUTTON_TEXT, UIConstants.FONT_MONOSPACED);
+        this.pullButton = this.createButton(UIConstants.PULL_BUTTON_TEXT, UIConstants.FONT_MONOSPACED);
+        this.pushButton = this.createButton(UIConstants.PUSH_BUTTON_TEXT, UIConstants.FONT_MONOSPACED);
+    }
+
     private void loadAddItemComponent() {
         JLabel itemNameLabel = new JLabel(UIConstants.ITEM_NAME_TEXT_FIELD_TEXT);
         itemNameLabel.setFont(new Font(UIConstants.FONT_ARIAL, Font.BOLD, 14));
 
-        this.addItemPanel.add(itemNameLabel);
         this.addItemPanel.setBackground(Color.LIGHT_GRAY);
+
+        this.addItemPanel.add(itemNameLabel);
         this.addItemPanel.add(this.itemNameField);
         this.addItemPanel.add(this.addButton);
-
-        Icon pullIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/download24.png")));
-        Icon pushIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/upload24.png")));
-
-        this.pullButton.setIcon(pullIcon);
-        this.pushButton.setIcon(pushIcon);
-
-        this.pullButton.addActionListener(e -> this.mockCloudButtonActionListener());
-        this.pushButton.addActionListener(e -> this.mockCloudButtonActionListener());
-
         this.addItemPanel.add(this.pullButton);
         this.addItemPanel.add(this.pushButton);
+    }
+
+    private void loadIcons() {
+        this.addButton.setIcon(new ImageIcon(this.loadIcon(UIConstants.ICON_ADD_PATH)));
+        this.pullButton.setIcon(new ImageIcon(this.loadIcon(UIConstants.ICON_PULL_PATH)));
+        this.pushButton.setIcon(new ImageIcon(this.loadIcon(UIConstants.ICON_PUSH_PATH)));
+    }
+
+    private void loadActionListeners() {
+        this.addButton.addActionListener(e -> this.addItem());
+        this.pullButton.addActionListener(e -> this.mockCloudButtonActionListener());
+        this.pushButton.addActionListener(e -> this.mockCloudButtonActionListener());
     }
 
     private JButton createButton(String text, String font) {
@@ -94,7 +105,7 @@ public class ShoppingListUI extends JFrame {
 
         if (!itemName.isEmpty()) {
             shoppingList.put(itemName, 0);
-            updateItemList();
+            this.updateItemList();
             itemNameField.setText("");
         }
     }
@@ -156,6 +167,10 @@ public class ShoppingListUI extends JFrame {
             TODO: The action listeners for both PULL and PUSH need to be implemented, with the help of the load balancer.
         */
         return e -> System.out.println("Warning: my appropriate ActionListener is missing!");
+    }
+
+    private URL loadIcon(String path) {
+        return Objects.requireNonNull(getClass().getResource(path));
     }
 
     public static void main(String[] args) {

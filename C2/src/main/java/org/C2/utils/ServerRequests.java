@@ -74,7 +74,6 @@ public class ServerRequests {
     }
 
     public static HttpResult<ConsistentHasher> getRing(String url) {
-        System.out.println("url = " + url);
 
         // Build Request
         Request request = new Request.Builder().url(url).get().build();
@@ -232,7 +231,20 @@ public class ServerRequests {
         return putInternalShoppingList(url, crdtJson, chJson);
     }
 
-    public static HttpResult<Void> putInternalShoppingList(String url, String crdtJson, String chJson) {
+    public static HttpResult<Void> putInternalShoppingList(ServerInfo serverInfo, String listId, String toPutJson, ConsistentHasher gossipCH) {
+        String url = format("http://{0}/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
+
+        String chJson;
+        try {
+            chJson = gossipCH.toJson();
+        } catch (Exception e) {
+            chJson = "{}";
+        }
+
+        return putInternalShoppingList(url, toPutJson, chJson);
+    }
+
+        public static HttpResult<Void> putInternalShoppingList(String url, String crdtJson, String chJson) {
         JSONObject putJson = new JSONObject();
 
         putJson.put(JsonKeys.list, crdtJson);

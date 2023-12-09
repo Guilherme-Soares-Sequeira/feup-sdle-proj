@@ -218,20 +218,6 @@ public class NodeServer extends BaseServer {
         final JSONObject response = new JSONObject();
         final String endpoint = "PUT /internal/shopping-list/{ID}";
 
-        String recRingStr = req.attribute(JsonKeys.ring);
-        if (recRingStr != null) {
-            try {
-                ConsistentHasher receivedRing = ConsistentHasher.fromJSON(recRingStr);
-                this.updateRingIfMoreRecent(receivedRing);
-            } catch (JsonProcessingException e) {
-                String wrnmsg = "Could not parse received ring.";
-                this.logWarning(endpoint, wrnmsg);
-            }
-        } else {
-            String wrnmsg = "Did not receive ring.";
-            this.logWarning(endpoint, wrnmsg);
-        }
-
         String listID = req.params(":id");
         if (listID == null) {
             String errmsg = "Could not get ID from request.";
@@ -297,6 +283,20 @@ public class NodeServer extends BaseServer {
         localCRDT.merge(receivedCRDT);
 
         this.kvstore.put(listID, localCRDT.toJson());
+
+        String recRingStr = req.attribute(JsonKeys.ring);
+        if (recRingStr != null) {
+            try {
+                ConsistentHasher receivedRing = ConsistentHasher.fromJSON(recRingStr);
+                this.updateRingIfMoreRecent(receivedRing);
+            } catch (JsonProcessingException e) {
+                String wrnmsg = "Could not parse received ring.";
+                this.logWarning(endpoint, wrnmsg);
+            }
+        } else {
+            String wrnmsg = "Did not receive ring.";
+            this.logWarning(endpoint, wrnmsg);
+        }
 
         res.status(201);
         return response.toString();
@@ -631,5 +631,47 @@ public class NodeServer extends BaseServer {
 
     }
 
+    @Override
+    /**
+     * Checks if internal ring is older than the received one and if it
+     *
+     * @param newRing ConsistentHasher that will replace current ring if current ring is older
+     * @return True if ring was updated, false otherwise
+     */
+    protected boolean updateRingIfMoreRecent(ConsistentHasher newRing) {
+        if (!this.ring.olderThan(newRing)) {
+            return false;
+        }
+        Set<String> listKeys = new HashSet<>();
+
+        for (Set<String> stringSet : virtualNodesLists.values()) {
+            listKeys.addAll(stringSet);
+        }
+
+        for (String listKey : listKeys) {
+            List<ServerInfo> currentPriorityList = ring.getServers(listKey, ConsistentHashingParameters.PriorityListLength);
+            List<ServerInfo> newPriorityList = newRing.getServers(listKey, ConsistentHashingParameters.PriorityListLength);
+
+            List<ServerInfo> newInPriorityList = new ArrayList<>(newPriorityList);
+            newInPriorityList.removeAll(currentPriorityList);
+
+            if (newInPriorityList.isEmpty()) continue;
+
+            Optional<String> localListOpt = this.kvstore.get(listKey);
+            if (localListOpt.isEmpty()) continue;
+
+            for (ServerInfo server : newInPriorityList) {
+                var res = ServerRequests.putInternalShoppingList(server, listKey, localListOpt.get(), newRing);
+                if (!res.isOk()) {
+                    this.logWarning("RING UPDATE", format("Failed to update new node \"{0}\" due to: {1}", server.fullRepresentation(), res.errorMessage()));
+                }
+
+                // TODO: Maybe add debug message here to inform of successful gossip
+            }
+        }
+
+        this.ring = newRing;
+        return true;
+    }
 
 }

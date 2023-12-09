@@ -55,9 +55,9 @@ public class CCounter {
             }
         }
         for(Dot dot: dots){
-            res.getDotKernel().join(this.dotKernel.remove(dot), this);
+            res.getDotKernel().join(this.dotKernel.remove(dot));
         }
-        res.getDotKernel().join(this.dotKernel.add(this.id, base+value), this);
+        res.getDotKernel().join(this.dotKernel.add(this.id, base+value));
 
         return res;
     }
@@ -74,15 +74,10 @@ public class CCounter {
             }
         }
         for(Dot dot: dots){
-            res.getDotKernel().join(this.dotKernel.remove(dot), this);
-        }
-        Integer dec=base-value;
-        Integer total = this.value()+dec;
-        if(total < 0){
-            dec+= Math.abs(total);
+            res.getDotKernel().join(this.dotKernel.remove(dot));
         }
 
-        res.getDotKernel().join(this.dotKernel.add(this.id, dec), this);
+        res.getDotKernel().join(this.dotKernel.add(this.id, base-value));
 
         return res;
     }
@@ -93,7 +88,7 @@ public class CCounter {
         return res;
     }
     public void join (CCounter other) {
-        this.getDotKernel().join(other.getDotKernel(), this);
+        this.getDotKernel().join(other.getDotKernel());
     }
 
     public Integer value(){

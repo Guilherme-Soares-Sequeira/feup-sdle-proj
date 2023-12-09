@@ -28,8 +28,10 @@ public class Main {
 
 */
 
-      map2.insert("banana");
-      map2.value("banana").inc(10);
+      map1.insert("banana");
+      map1.value("banana").inc(16);
+      map2.join(map1);
+      map2.value("banana").inc(16);
       map1.join(map2);
     }
 }

@@ -1,25 +1,19 @@
 package org.C2.cloud;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import okhttp3.OkHttpClient;
-import org.C2.cloud.database.KVStore;
 import org.C2.utils.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import spark.Response;
 import spark.Request;
-import spark.servlet.SparkApplication;
 
 import static java.text.MessageFormat.format;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static spark.Spark.*;
 
@@ -344,133 +338,298 @@ public class NodeServer extends BaseServer {
 
         // run this in parallel because we want to return 202 ASAP
         CompletableFuture.runAsync(() -> {
+            handleReadOperation(listID, endpoint);
+        });
 
-            var servers = this.ring.getServers(listID, ConsistentHashingParameters.PriorityListLength);
-            servers = this.getHealthyServers(servers, ConsistentHashingParameters.N);
+        return "";
+    }
 
-            List<CompletableFuture<String>> futures = new ArrayList<>();
+    private void handleReadOperation(String listID, String endpoint) {
 
-            // do requests in parallel
-            for (ServerInfo server : servers) {
-                CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
-                    if (server.equals(this.serverInfo)) {
-                        Optional<String> localListOpt = this.kvstore.get(listID);
+        // Get healthy servers
+        var servers = this.ring.getServers(listID, ConsistentHashingParameters.PriorityListLength);
+        servers = this.getHealthyServers(servers, ConsistentHashingParameters.N);
 
-                        if (localListOpt.isEmpty()) {
-                            // do nothing, this future will be skipped
-                            throw new RuntimeException("Runtime Exception due to local database not having the requested list");
-                        }
-                        return localListOpt.get();
-                    }
-                    // fetch from server
-                    String url = format("http://{0}/internal/shopping-list/{1}", server.fullRepresentation(), listID);
+        List<CompletableFuture<ShoppingListReturn>> futures = new ArrayList<>();
 
-                    OkHttpClient client = new OkHttpClient();
+        // do requests in parallel
+        for (ServerInfo server : servers) {
+            CompletableFuture<ShoppingListReturn> future = CompletableFuture.supplyAsync(() -> asyncReadRequest(listID, endpoint, server));
 
-                    okhttp3.Request request = new okhttp3.Request.Builder().url(url).get().build();
+            futures.add(future);
+        }
 
+        // Wait for a maximum of 700 milliseconds for all tasks to complete
+        try {
+            CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            allOf.get(700, TimeUnit.MILLISECONDS); // Adjust the timeout as needed
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            // do nothing
+        }
 
-                    try (okhttp3.Response nodeResp = client.newCall(request).execute()) {
-                        if (nodeResp.code() != 200 || nodeResp.body() == null) {
-                            throw new IOException();
-                        }
+        // Extract CRDTs and update Ring from requests that finished successfully
+        // TODO: Change CRDT implementation
+        List<MockCRDT> responseList = new ArrayList<>();
 
-                        JSONObject respJson = new JSONObject(new JSONTokener(nodeResp.body().toString()));
-
-                        try {
-                            String receivedRingJson = respJson.getString(JsonKeys.ring);
-                            ConsistentHasher receivedRing = ConsistentHasher.fromJSON(receivedRingJson);
-                            this.updateRingIfMoreRecent(receivedRing);
-                        } catch (Exception e) {
-                            //do nothing
-                            this.logWarning(endpoint, "Tried to update ring with response's ring but an error occurred.");
-                            throw new RuntimeException("Tried to update ring with response's ring but an error occurred.");
-                        }
-
-                        return respJson.getString(JsonKeys.list);
-
-                    } catch (IOException e) {
-                        // do nothing, this future will be skipped
-                        this.logError(endpoint, "Couldn't fetch internal shopping list: " + e);
-                        throw new RuntimeException("Runtime Exception due to error when fetching internal shopping list");
-                    }
-                });
-
-                futures.add(future);
-            }
-
-            // Wait for a maximum of 700 milliseconds for all tasks to complete
-            try {
-                CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-                allOf.get(700, TimeUnit.MILLISECONDS); // Adjust the timeout as needed
-            } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                // do nothing
-            }
-
-            // TODO: Change CRDT implementation
-            List<MockCRDT> responseList = new ArrayList<>();
-
-            for (CompletableFuture<String> future : futures) {
-                if (future.isDone() && !future.isCompletedExceptionally()) {
-                    try {
-                        String futureResponse = future.get();
-
-                        JSONObject responseJson = new JSONObject(new JSONTokener(futureResponse));
-
-                        String listJson = responseJson.getString(JsonKeys.list);
-
-                        // TODO: Change CRDT implementation
-                        MockCRDT crdt = MockCRDT.fromJson(listJson);
-                        responseList.add(crdt);
-
-                        // TODO: Check if this doesn't impact performance too much
-                        String ringJson = responseJson.getString(JsonKeys.ring);
-                        ConsistentHasher receivedRing = ConsistentHasher.fromJSON(ringJson);
-                        this.updateRingIfMoreRecent(receivedRing);
-
-                        continue;
-                    } catch (InterruptedException | ExecutionException | JSONException | JsonProcessingException e) {
-                        // do nothing
-                    }
-                }
-
+        for (CompletableFuture<ShoppingListReturn> future : futures) {
+            if (future.isDone() && !future.isCompletedExceptionally()) {
                 try {
-                    future.cancel(true);
-                } catch (CancellationException e) {
+                    ShoppingListReturn res = future.get();
+
+                    if (res.ring().isPresent()) {
+                        this.updateRingIfMoreRecent(res.ring().get());
+                    }
+
+                    responseList.add(res.crdt());
+
+                    continue;
+                } catch (ExecutionException | InterruptedException e) {
                     // do nothing
                 }
             }
 
-            if (responseList.size() < ConsistentHashingParameters.R) {
-                // TODO: Send a womp womp to load balancer
-                this.logWarning(endpoint, "Simulating sending a womp womp to load balancer");
-                return;
+            try {
+                future.cancel(true);
+            } catch (CancellationException e) {
+                // do nothing
             }
+        }
 
-            // TODO: Change CRDT implementation
-            // ASOOM there is at least two...
-            MockCRDT accum = responseList.get(0);
+        // Check criteria for READ fail
+        if (responseList.size() < ConsistentHashingParameters.R) {
+            // TODO: Send a womp womp to load balancer
+            this.logWarning(endpoint, "Simulating sending a womp womp to load balancer");
+            return;
+        }
 
-            for (int i = 1; i < responseList.size(); i++) {
-                accum.merge(responseList.get(i));
+        // TODO: Change CRDT implementation
+        // ASOOM there is at least two...
+        MockCRDT accum = responseList.get(0);
+
+        for (int i = 1; i < responseList.size(); i++) {
+            accum.merge(responseList.get(i));
+        }
+
+        // Update local view of list
+        this.kvstore.put(listID, accum.toJson());
+
+        // TODO: return it to loadbalancer
+
+        // simulating sending it to loadbalancer
+        this.logWarning(endpoint, format("Simulating sending the crdt to loadbalancer... json = {0}", accum.toJson()));
+    }
+
+    private ShoppingListReturn asyncReadRequest(String listId, String endpoint, ServerInfo server) {
+
+        if (server.equals(this.serverInfo)) {
+            // get local copy
+            Optional<String> localListOpt = this.kvstore.get(listId);
+
+            if (localListOpt.isEmpty()) {
+                // do nothing, this future will be skipped
+                throw new RuntimeException("Runtime Exception due to local database not having the requested list");
             }
+            try {
+                return new ShoppingListReturn(MockCRDT.fromJson(localListOpt.get()), Optional.empty()) ;
+            } catch (Exception e) {
+                String errorMessage = "Failed to parse CRDT from JSON: " + e;
+                this.logError(errorMessage, endpoint);
+                throw new RuntimeException(errorMessage);
+            }
+        }
+        // fetch from server
+        var result = ServerRequests.getInternalShoppingList(server, listId);
 
-            this.kvstore.put(listID, accum.toJson());
+        if (!result.isOk()) {
+            String warningMessage = "Failed to fetch internal shopping list: " + result.errorMessage();
+            this.logWarning(warningMessage, endpoint);
+            throw new RuntimeException(warningMessage);
+        }
 
-            // TODO: return it to loadbalancer
-
-            // simulating sending it to loadbalancer
-            this.logWarning(endpoint, format("Simulating sending the crdt to loadbalancer... json = {0}", accum.toJson()));
-        });
-
-        return "";
+        return result.get();
     }
 
     private String putExternalShoppingList(Request req, Response res) {
         final JSONObject response = new JSONObject();
         final String endpoint = "PUT /external/shopping-list/{ID}";
 
-        // TODO: implement this route
-        return null;
+        // Get id
+        String listID = req.params(":id");
+        if (listID == null) {
+            final String errorString = "Could not get id from request";
+
+            this.logError(endpoint, errorString);
+
+            res.status(400);
+            response.put(JsonKeys.errorMessage, errorString);
+
+            return response.toString();
+        }
+
+        JSONObject requestBody;
+        try {
+            requestBody = new JSONObject(new JSONTokener(req.body()));
+        } catch (Exception e) {
+            String errorMessage = "Could not parse request body.";
+            res.status(400);
+            this.logError(endpoint, errorMessage);
+            response.put(JsonKeys.errorMessage, errorMessage);
+            return response.toString();
+        }
+
+        String forId;
+        try {
+            forId = requestBody.getString(JsonKeys.forId);
+        } catch (Exception ignored) {
+            final String errorString = "'forId' attribute not found in request.";
+
+            this.logError(endpoint, errorString);
+
+            response.put(JsonKeys.errorMessage, errorString);
+            res.status(400);
+            return response.toString();
+        }
+
+        String listJson;
+        try {
+            listJson = requestBody.getString(JsonKeys.list);
+        } catch (Exception ignored) {
+            final String errorString = "'list' attribute not found in request.";
+
+            this.logError(endpoint, errorString);
+
+            response.put(JsonKeys.errorMessage, errorString);
+            res.status(400);
+            return response.toString();
+        }
+
+        // TODO: Change CRDT implementation
+        MockCRDT listToPut;
+        try {
+            listToPut = MockCRDT.fromJson(listJson);
+
+        } catch (Exception ignored) {
+            final String errorString = "Failed to parse CRDT from JSON.";
+
+            this.logError(endpoint, errorString);
+
+            response.put(JsonKeys.errorMessage, errorString);
+            res.status(400);
+            return response.toString();
+        }
+
+
+        var priorityList = this.ring.getServers(listID, ConsistentHashingParameters.PriorityListLength);
+        priorityList = this.getHealthyServers(priorityList, ConsistentHashingParameters.N);
+
+        // if this server is not on the priority list, try to forward it to one that is
+        if (!priorityList.contains(this.serverInfo)) {
+            for (var server : priorityList) {
+                var result = ServerRequests.putExternalShoppingList(server, listID, listToPut, forId);
+                if (result.isOk()) {
+                    res.status(202);
+                    return "";
+                }
+            }
+        }
+
+        res.status(202);
+
+
+        // run this in parallel because we want to return 202 ASAP
+        CompletableFuture.runAsync(() -> {
+            handleWriteOperation(listID, listToPut, endpoint, forId);
+        });
+
+        return "";
     }
+
+    // TODO: Change CRDT implementation
+    private void handleWriteOperation(String listID, MockCRDT list, String endpoint, String forId) {
+
+        // Get healthy servers
+        var servers = this.ring.getServers(listID, ConsistentHashingParameters.PriorityListLength);
+        servers = this.getHealthyServers(servers, ConsistentHashingParameters.N);
+
+        List<CompletableFuture<HttpResult<Void>>> futures = new ArrayList<>();
+
+        // do requests in parallel
+        for (ServerInfo server : servers) {
+            CompletableFuture<HttpResult<Void>> future = CompletableFuture.supplyAsync(() -> asyncWriteRequest(listID, list, endpoint, server));
+
+            futures.add(future);
+        }
+
+        // Wait for a maximum of 700 milliseconds for all tasks to complete
+        try {
+            CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            allOf.get(700, TimeUnit.MILLISECONDS); // Adjust the timeout as needed
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            // do nothing
+        }
+
+        // Count number of successful writes
+        int numberSuccessfulRequests = 0;
+        for (var future : futures) {
+            if (future.isDone() && !future.isCompletedExceptionally()) {
+                try {
+                    var response = future.get();
+                    if (response.isOk()) numberSuccessfulRequests++;
+                } catch (InterruptedException | ExecutionException e) {
+                    // do nothing
+                }
+            }
+
+            try {
+                future.cancel(true);
+            } catch (CancellationException e) {
+                // do nothing
+            }
+        }
+
+        // Check criteria for WRITE fail
+        if (numberSuccessfulRequests < ConsistentHashingParameters.W) {
+            // TODO: Send a womp womp to load balancer
+            this.logWarning(endpoint, "Simulating sending a womp womp to load balancer");
+            return;
+        }
+
+
+        // TODO: return OK to loadbalancer
+
+        // simulating sending it to loadbalancer
+        this.logWarning(endpoint, format("Simulating sending OK to loadbalancer... for = {0}", forId));
+    }
+
+    // TODO: Change CRDT implementation
+    private HttpResult<Void> asyncWriteRequest(String listId, MockCRDT toPutList, String endpoint, ServerInfo server) {
+        if (server.equals(this.serverInfo)) {
+            try {
+                Optional<String> localListJsonOpt = this.kvstore.get(listId);
+
+                if (localListJsonOpt.isEmpty()) {
+                    this.kvstore.put(listId, toPutList.toJson());
+
+                } else {
+                    // TODO: Change CRDT implementation
+                    var localList = MockCRDT.fromJson(localListJsonOpt.get());
+                    localList.merge(toPutList);
+                    this.kvstore.put(listId, localList.toJson());
+                }
+
+                // simulate OK response
+                return HttpResult.ok(201, null);
+
+            } catch (Exception e) {
+                String errorMessage = "Failed to store list locally: " + e;
+                this.logError(errorMessage, endpoint);
+                throw new RuntimeException(errorMessage);
+            }
+        }
+        // fetch from server
+        return ServerRequests.putInternalShoppingList(server, listId, toPutList, this.ring);
+
+    }
+
+
 }

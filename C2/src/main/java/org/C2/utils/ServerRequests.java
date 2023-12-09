@@ -161,6 +161,12 @@ public class ServerRequests {
 
     // --------------------------------------- GET /internal/shopping-list/ --------------------------------------------
 
+    public static HttpResult<ShoppingListReturn> getInternalShoppingList(ServerInfo serverInfo, String listId) {
+        String url = format("http://{0}/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
+
+        return getInternalShoppingList(url);
+    }
+
     public static HttpResult<ShoppingListReturn> getInternalShoppingList(String url) {
         Request request = new Request.Builder().url(url).get().build();
         try (Response response = client.newCall(request).execute()) {

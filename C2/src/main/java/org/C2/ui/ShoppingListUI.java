@@ -3,33 +3,36 @@ package org.C2.ui;
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ShoppingListUI extends JFrame {
-    private Map<String, Integer> shoppingList;
-    private JTextField itemNameField;
-    private JButton addButton;
+    private final Map<String, Integer> shoppingList;
+    private final JTextField itemNameField;
+    private final JButton addButton;
 
-    private JPanel addItemPanel;
-    private JPanel itemListPanel;
+    private final JButton pullButton;
+    private final JButton pushButton;
+
+    private final JPanel addItemPanel;
+    private final JPanel itemListPanel;
 
     public ShoppingListUI() {
         this.shoppingList = new HashMap<>();
 
-        this.addItemPanel = new JPanel();
+        this.addItemPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+
         this.itemNameField = new JTextField(UIConstants.ITEM_NAME_TEXT_FIELD_COLS);
 
         this.itemListPanel = new JPanel();
 
-        GridLayout layout = new GridLayout(10, 1, 2, 2);
-
         this.itemListPanel.setLayout(new BoxLayout(this.itemListPanel, BoxLayout.Y_AXIS));
 
-        this.addButton = this.createButton(UIConstants.ADD_ITEM_BUTTON_TEXT, UIConstants.FONT_ARIAL);
+        this.addButton = this.createButton(UIConstants.ADD_ITEM_BUTTON_TEXT, UIConstants.FONT_MONOSPACED);
         this.addButton.addActionListener(e -> this.addItem());
+        this.pullButton = this.createButton(UIConstants.PULL_BUTTON_TEXT, UIConstants.FONT_MONOSPACED);
+        this.pushButton = this.createButton(UIConstants.PUSH_BUTTON_TEXT, UIConstants.FONT_MONOSPACED);
 
         this.loadAddItemComponent();
 
@@ -56,6 +59,15 @@ public class ShoppingListUI extends JFrame {
         this.addItemPanel.setBackground(Color.LIGHT_GRAY);
         this.addItemPanel.add(this.itemNameField);
         this.addItemPanel.add(this.addButton);
+
+        Icon pullIcon = new ImageIcon("/home/pedro-ramalho/uni/feup-sdle-proj/C2/assets/download24.png");
+        Icon pushIcon = new ImageIcon("/home/pedro-ramalho/uni/feup-sdle-proj/C2/assets/upload24.png");
+
+        this.pullButton.setIcon(pullIcon);
+        this.pushButton.setIcon(pushIcon);
+
+        this.addItemPanel.add(this.pullButton);
+        this.addItemPanel.add(this.pushButton);
     }
 
     private JButton createButton(String text, String font) {

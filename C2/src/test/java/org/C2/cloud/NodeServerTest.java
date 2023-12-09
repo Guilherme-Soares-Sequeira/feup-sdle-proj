@@ -28,7 +28,7 @@ public class NodeServerTest {
 
     @BeforeEach
     public void setup() {
-        this.server = new NodeServer("A", 4444, false, 3);
+        this.server = new NodeServer("localhost", 4444, false, 3);
         this.server.init();
     }
 
@@ -40,7 +40,7 @@ public class NodeServerTest {
     @Test
     public void getInternalRingTest() throws Exception {
         ConsistentHasher expectedRing = new ConsistentHasher(0);
-        expectedRing.addServer(new ServerInfo("A", 4444), 3);
+        expectedRing.addServer(new ServerInfo("localhost", 4444), 3);
         ConsistentHasher notExpectedRing = new ConsistentHasher(0);
 
         String url = "http://localhost:4444/internal/ring";
@@ -82,8 +82,8 @@ public class NodeServerTest {
     @Test
     public void putExternalRingTest() throws Exception {
         ConsistentHasher putRing = new ConsistentHasher(9999);
-        putRing.addServer(new ServerInfo("A", 4444), 3);
-        putRing.addServer(new ServerInfo("B", 3333), 2);
+        putRing.addServer(new ServerInfo("localhost", 4444), 3);
+        putRing.addServer(new ServerInfo("localhost", 3333), 2);
 
         String url = "http://localhost:4444/external/ring";
 
@@ -105,13 +105,6 @@ public class NodeServerTest {
         OkHttpClient client = new OkHttpClient();
         String url = "http://localhost:4444/1";
     }
-
-
-    @Test
-    public void getInternalShoppingListTest() throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        String url = "http://localhost:4444/1";
-    }
-
+    
 
 }

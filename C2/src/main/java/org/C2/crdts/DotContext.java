@@ -48,35 +48,30 @@ public class DotContext {
     }
 
     public void compact() {
-        boolean flag = true;
-        while(flag) {
-            flag = false;
-            for (Dot dot : this.dotCloud) {
-                Integer sequenceNumber = this.causalContext.get(dot.getReplicaID());
-                if (sequenceNumber == null) {
-                    if (dot.getSequenceNumber() == 1) {
-                        this.causalContext.put(dot.getReplicaID(), dot.getSequenceNumber());
-                        this.dotCloud.remove(dot);
-                        flag = true;
-                    }
+        Iterator<Dot> iterator = this.dotCloud.iterator();
+        while (iterator.hasNext()) {
+            Dot dot = iterator.next();
+            Integer sequenceNumber = this.causalContext.get(dot.getReplicaID());
+
+            if (sequenceNumber == null) {
+                if (dot.getSequenceNumber() == 1) {
+                    this.causalContext.put(dot.getReplicaID(), dot.getSequenceNumber());
+                    iterator.remove();
+                }
+            } else {
+                if (dot.getSequenceNumber() == sequenceNumber + 1) {
+                    this.causalContext.put(dot.getReplicaID(), dot.getSequenceNumber() + 1);
+                    iterator.remove();
                 } else {
-                    if (dot.getSequenceNumber() == this.causalContext.get(dot.getReplicaID()) + 1) {
-                        this.causalContext.put(dot.getReplicaID(), dot.getSequenceNumber() + 1);
-                        this.dotCloud.remove(dot);
-                        flag = true;
-                    } else {
-                        if (dot.getSequenceNumber() <= this.causalContext.get(dot.getReplicaID())) {
-                            this.dotCloud.remove(dot);
-                        }
+                    if (dot.getSequenceNumber() <= sequenceNumber) {
+                        iterator.remove();
                     }
                 }
             }
         }
     }
 
-
     public Dot makeDot(String id) {
-        System.out.println("Making dot for " + id);
         Integer existing = this.causalContext.get(id);
         if (existing != null) {
             this.causalContext.put(id, existing + 1);

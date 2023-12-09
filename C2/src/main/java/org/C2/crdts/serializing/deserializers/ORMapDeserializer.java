@@ -28,6 +28,7 @@ public class ORMapDeserializer extends StdDeserializer<ORMap> {
         String replicaID = root.get("replicaID").asText();
         Map<String, CCounter> map = p.getCodec().treeToValue(root.get("map"), Map.class);
         DotContext context = p.getCodec().treeToValue(root.get("mapContext"), DotContext.class);
-        return new ORMap(replicaID, map, context);
+       // return new ORMap(replicaID, map, context);
+        return new ORMap(replicaID);
     }
 }

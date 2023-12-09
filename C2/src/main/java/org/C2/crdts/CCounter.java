@@ -61,7 +61,6 @@ public class CCounter {
 
     public CCounter inc(Integer value){
 
-        System.out.println("Incrementing " + this.id + " " + value);
         CCounter res = new CCounter(this.id);
         Set<Dot> dots = new HashSet<>();
         Integer base= 0;
@@ -72,9 +71,9 @@ public class CCounter {
             }
         }
         for(Dot dot: dots){
-            res.getDotKernel().join(this.dotKernel.remove(dot), this.id);
+            res.getDotKernel().join(this.dotKernel.remove(dot));
         }
-        res.getDotKernel().join(this.dotKernel.add(this.id, base+value), this.id);
+        res.getDotKernel().join(this.dotKernel.add(this.id, base+value));
 
         return res;
     }
@@ -91,11 +90,10 @@ public class CCounter {
             }
         }
         for(Dot dot: dots){
-            res.getDotKernel().join(this.dotKernel.remove(dot), this.id);
+            res.getDotKernel().join(this.dotKernel.remove(dot));
         }
-        Integer dec=base-value;
-        if (dec < 0) dec = 0;
-        res.getDotKernel().join(this.dotKernel.add(this.id, dec), this.id);
+
+        res.getDotKernel().join(this.dotKernel.add(this.id, base-value));
 
         return res;
     }
@@ -106,15 +104,13 @@ public class CCounter {
         return res;
     }
     public void join (CCounter other) {
-        this.getDotKernel().join(other.getDotKernel(), this.id);
+        this.getDotKernel().join(other.getDotKernel());
     }
 
     public Integer value(){
         Integer res = 0;
         for(Map.Entry<Dot, Integer> entry: this.dotKernel.getDotMap().entrySet()){
-            if(entry.getKey().getReplicaID() == this.id){
                 res += entry.getValue();
-            }
         }
         return res;
     }

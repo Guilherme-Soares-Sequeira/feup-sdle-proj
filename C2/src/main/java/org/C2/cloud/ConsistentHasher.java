@@ -345,4 +345,7 @@ public class ConsistentHasher  {
         return this.timestamp <= other.getTimestamp();
     }
 
+    public Set<ServerInfo> getAllServers() {
+        return this.serverToNumberOfVirtualNodes.keySet();
+    }
 }

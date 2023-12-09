@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class ShoppingListUI extends JFrame {
     private final Map<String, Integer> shoppingList;
@@ -60,11 +61,14 @@ public class ShoppingListUI extends JFrame {
         this.addItemPanel.add(this.itemNameField);
         this.addItemPanel.add(this.addButton);
 
-        Icon pullIcon = new ImageIcon("/home/pedro-ramalho/uni/feup-sdle-proj/C2/assets/download24.png");
-        Icon pushIcon = new ImageIcon("/home/pedro-ramalho/uni/feup-sdle-proj/C2/assets/upload24.png");
+        Icon pullIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/download24.png")));
+        Icon pushIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/icons/upload24.png")));
 
         this.pullButton.setIcon(pullIcon);
         this.pushButton.setIcon(pushIcon);
+
+        this.pullButton.addActionListener(e -> this.mockCloudButtonActionListener());
+        this.pushButton.addActionListener(e -> this.mockCloudButtonActionListener());
 
         this.addItemPanel.add(this.pullButton);
         this.addItemPanel.add(this.pushButton);
@@ -145,6 +149,13 @@ public class ShoppingListUI extends JFrame {
                 updateItemList();
             }
         };
+    }
+
+    private ActionListener mockCloudButtonActionListener() {
+        /*
+            TODO: The action listeners for both PULL and PUSH need to be implemented, with the help of the load balancer.
+        */
+        return e -> System.out.println("Warning: my appropriate ActionListener is missing!");
     }
 
     public static void main(String[] args) {

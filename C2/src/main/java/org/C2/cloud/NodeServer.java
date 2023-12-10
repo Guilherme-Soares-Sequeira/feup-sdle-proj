@@ -33,7 +33,6 @@ public class NodeServer extends BaseServer {
         // if server is not a seed server make it so this consistent hasher is considered outdated
         this.ring = new ConsistentHasher(this.seed ? Instant.now().getEpochSecond() : 0);
 
-
         this.numberOfVirtualNodes = numberOfVirtualNodes;
 
         this.vnodeTokens = new HashMap<>();
@@ -437,7 +436,6 @@ public class NodeServer extends BaseServer {
             System.out.println();
             accum.join(responseList.get(i));
         }
-
 
 
         // Update local view of list

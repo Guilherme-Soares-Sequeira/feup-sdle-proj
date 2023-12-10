@@ -21,4 +21,9 @@ public class JsonKeys {
      * Used for passing information which will be used to send the information back to the LoadBalancer.
      */
     public static final String forId = "for";
+
+    /**
+     * Used by the load balancer to inform the client of what' the status of a request when polled.
+     */
+    public static final String status = "status";
 }

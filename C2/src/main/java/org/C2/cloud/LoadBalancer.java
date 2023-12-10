@@ -1,15 +1,19 @@
 package org.C2.cloud;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.C2.utils.*;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import spark.Request;
 import spark.Response;
+import spark.Service;
 
 import java.util.*;
 
-import static spark.Spark.*;
-
 public class LoadBalancer extends BaseServer {
+
+    public final static ServerInfo lbinfo = new ServerInfo("localhost", 2000);
+
     private ConsistentHasher ring;
 
     // Timeout for requests to the servers
@@ -18,31 +22,45 @@ public class LoadBalancer extends BaseServer {
     private final Map<String, RequestStatus> requestStatusMap;
     private final Map<String, String> requestedLists;
 
+    private Service http;
+
     public LoadBalancer(String identifier, int port) {
         super(identifier, port);
+
+        System.out.println("constructor in load balancer");
+
         this.requestStatusMap = new HashMap<>();
         this.requestedLists = new HashMap<>();
     }
 
     @Override
     public void init() {
+        // ignite service
+        this.http = Service.ignite();
+
+        this.http.port(this.serverInfo.port());
+
         this.querySeeds();
-        defineRoutes();
+        this.defineRoutes();
+    }
+
+    public void updateRing(ConsistentHasher newRing) {
+        this.ring = newRing;
     }
 
     @Override
     protected void defineRoutes() {
-        get("/read/:id", this::read);
-        put("/write/:id", this::write);
-        put("/nodes/read/", this::nodeRequestRead);
-        put("/nodes/write/", this::nodeRequestWrite);
-        get("/client/pull/:id", this::clientRequestPull);
-        get("/client/read/:id", this::clientRequestRead);
+        this.http.get("/read/:id", this::read);
+        this.http.put("/write/:id", this::write);
+        this.http.put("/nodes/read/", this::nodeRequestRead);
+        this.http.put("/nodes/write/", this::nodeRequestWrite);
+        this.http.get("/client/poll/:id", this::clientRequestPoll);
+        this.http.get("/client/read/:id", this::clientRequestRead);
     }
 
     private String nodeRequestWrite(Request req, Response res) {
         final JSONObject response = new JSONObject();
-        final String endpoint = "PUT /nodes/";
+        final String endpoint = "PUT /nodes/write/";
 
         JSONObject bodyJson;
 
@@ -103,7 +121,7 @@ public class LoadBalancer extends BaseServer {
 
     private String nodeRequestRead(Request req, Response res){
         final JSONObject response = new JSONObject();
-        final String endpoint = "PUT /nodes/";
+        final String endpoint = "PUT /nodes/read/";
 
         JSONObject bodyJson;
 
@@ -175,11 +193,9 @@ public class LoadBalancer extends BaseServer {
         return "";
     }
 
-
-
-    private String clientRequestPull(Request req, Response res) {
+    private String clientRequestPoll(Request req, Response res) {
         final JSONObject response = new JSONObject();
-        final String endpoint = "GET /client/{ID}";
+        final String endpoint = "GET /client/poll/{ID}";
 
         String forID = req.params(":id");
 
@@ -195,12 +211,11 @@ public class LoadBalancer extends BaseServer {
 
         RequestStatus status = requestStatusMap.getOrDefault(forID, RequestStatus.ERROR);
 
-        response.put("status", status.toString());
+        response.put(JsonKeys.status, status.toString());
 
         res.status(200);
         return "";
     }
-
 
     public String clientRequestRead(Request req, Response res) {
         final JSONObject response = new JSONObject();
@@ -222,8 +237,20 @@ public class LoadBalancer extends BaseServer {
 
         if (status == RequestStatus.DONE) {
             String list = requestedLists.get(forID);
+            response.put(JsonKeys.status, RequestStatus.DONE.toString());
             response.put(JsonKeys.list, list);
+            res.status(200);
+            return response.toString();
         }
+
+        else if (status == RequestStatus.PROCESSING) {
+            String list = requestedLists.get(forID);
+            response.put(JsonKeys.status, RequestStatus.DONE.toString());
+            res.status(200);
+            return response.toString();
+        }
+
+        // Status = ERROR
 
         response.put("status", status.toString());
 
@@ -231,9 +258,7 @@ public class LoadBalancer extends BaseServer {
         return response.toString();
     }
 
-
     private ServerInfo getRandomServer() {
-        //get all servers
         List<ServerInfo> servers = new ArrayList<>(this.ring.getAllServers());
 
         Random random = new Random();
@@ -275,18 +300,19 @@ public class LoadBalancer extends BaseServer {
 
         this.requestStatusMap.put(forID, RequestStatus.PROCESSING);
 
+        response.put(JsonKeys.forId, forID);
+
         res.status(result.code());
-        return "";
+
+        return response.toString();
     }
 
     private String write(Request req, Response res) {
         final JSONObject response = new JSONObject();
         final String endpoint = "PUT /write/{ID}";
 
-        // get the random server
-        ServerInfo serverInfo = getRandomServer();
+        ServerInfo serverInfo = this.getRandomServer();
 
-        // get the id
         String listID = req.params(":id");
 
         if (listID == null) {
@@ -300,7 +326,10 @@ public class LoadBalancer extends BaseServer {
             return response.toString();
         }
 
-        String receivedListJson = req.attribute(JsonKeys.list);
+        JsonObject object = JsonParser.parseString(req.body()).getAsJsonObject();
+
+        String receivedListJson = String.valueOf(object.get(JsonKeys.list));
+
         if (receivedListJson == null) {
             String errmsg = "The received list is invalid.";
 
@@ -317,18 +346,24 @@ public class LoadBalancer extends BaseServer {
 
         if (!result.isOk()) {
             response.put(JsonKeys.errorMessage, result.errorMessage());
+
             res.status(result.code());
+
             return response.toString();
         }
 
         this.requestStatusMap.put(forID, RequestStatus.PROCESSING);
 
+        response.put(JsonKeys.forId, forID);
+
         res.status(result.code());
-        return "";
+
+        return response.toString();
     }
 
     private String generateRandomId() {
         UUID uuid = UUID.randomUUID();
+
         return uuid.toString();
     }
 

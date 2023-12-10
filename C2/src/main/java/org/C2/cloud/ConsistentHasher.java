@@ -346,6 +346,16 @@ public class ConsistentHasher  {
     }
 
     public Set<ServerInfo> getAllServers() {
+        if (this.serverToNumberOfVirtualNodes.isEmpty()) {
+            System.out.println("this keyset is empty");
+        }
+
+        for (ServerInfo key : this.serverToNumberOfVirtualNodes.keySet()) {
+            System.out.println("identifier: " + key.identifier());
+            System.out.println("port: " + key.port());
+        }
+
+        System.out.println("getAllServers got called");
         return this.serverToNumberOfVirtualNodes.keySet();
     }
 }

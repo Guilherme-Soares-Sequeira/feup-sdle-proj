@@ -1,6 +1,12 @@
 package org.C2.ui;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import okhttp3.*;
+import org.C2.cloud.LoadBalancer;
 import org.C2.cloud.database.KVStore;
+import org.C2.crdts.ORMap;
+import org.C2.utils.*;
+import org.eclipse.jetty.server.Server;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -9,20 +15,26 @@ import javax.swing.border.CompoundBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.net.URL;
+import java.sql.SQLOutput;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class MockUI extends JFrame {
     private final KVStore kvstore;
     private final int width;
     private final int height;
     private String url;
-    private JSONObject sl;
+    private String forID;
+    private ORMap sl;
     private JPanel itemListPanel;
 
     public MockUI() {
-        this.kvstore = new KVStore("kvstore", true);
+        this.kvstore = new KVStore("users", true);
 
         this.loadUI();
 
@@ -52,7 +64,11 @@ public class MockUI extends JFrame {
             Optional<String> list = this.kvstore.get(url);
 
             if (list.isPresent()) {
-                this.showShoppingList(list.get());
+                try {
+                    this.showShoppingList(list.get());
+                } catch (JsonProcessingException ex) {
+                    throw new RuntimeException(ex);
+                }
 
                 super.dispose();
             } else {
@@ -68,8 +84,8 @@ public class MockUI extends JFrame {
         super.add(panel);
     }
 
-    private void showShoppingList(String list) {
-        this.sl = new JSONObject(new JSONTokener(list));
+    private void showShoppingList(String list) throws JsonProcessingException {
+        this.sl = ORMap.fromJson(list);
 
         this.updateItemList();
 
@@ -113,10 +129,50 @@ public class MockUI extends JFrame {
         pushButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("I got called and I am pushing content");
-                kvstore.put(url, sl.toString());
+                String endpoint = "http://localhost:2000/write/" + url;
+
+                performWriteRequest(endpoint);
             }
         });
+
+        pullButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (!performReadRequest()) {
+                    return;
+                }
+
+                CompletableFuture<Optional<RequestStatus>> future = CompletableFuture.supplyAsync(() -> performPollRequest());
+
+                Optional<RequestStatus> pollStatus;
+                try {
+                    pollStatus = future.get(4000, TimeUnit.MILLISECONDS);
+                } catch (Exception ex) {
+                    // request timed out or was interrupted
+
+                    // TODO: add a message in the UI
+                    return;
+                }
+
+                if (pollStatus.isEmpty() || !pollStatus.get().equals(RequestStatus.DONE)) {
+                    // response wasn't ready in time
+
+                    // TODO: add a message in the UI
+
+                    return;
+                }
+
+                Optional<ORMap> fetchedList = performFetchReadDataRequest();
+
+                if (fetchedList.isPresent()) {
+                    sl.join(fetchedList.get());
+
+                    updateItemList();
+                }
+
+            }
+        });
+
 
         addItemPanel.add(itemNameLabel);
         addItemPanel.add(itemNameField);
@@ -125,6 +181,53 @@ public class MockUI extends JFrame {
         addItemPanel.add(pushButton);
 
         return addItemPanel;
+    }
+
+    private void performWriteRequest(String endpoint) {
+        String list = this.sl.toJson();
+
+        HttpResult<String> result = ServerRequests.requestWrite(LoadBalancer.lbinfo, list, url);
+
+        if (!result.isOk()) {
+            System.err.println(result.errorMessage());
+        } else {
+            this.forID = result.get();
+        }
+    }
+
+    private boolean performReadRequest() {
+        HttpResult<String> result = ServerRequests.requestRead(LoadBalancer.lbinfo, this.url);
+
+        this.forID = forID;
+
+        return result.isOk();
+    }
+
+    private Optional<RequestStatus> performPollRequest() {
+        HttpResult<RequestStatus> result = ServerRequests.pollRequest(LoadBalancer.lbinfo, this.forID);
+
+        if (!result.isOk()) {
+            System.err.println(result.errorMessage());
+            return Optional.empty();
+        }
+
+        return Optional.of(result.get());
+    }
+
+    private Optional<ORMap> performFetchReadDataRequest() {
+        HttpResult<FetchListInfo> result = ServerRequests.fetchList(LoadBalancer.lbinfo, this.forID);
+
+        if (!result.isOk()) {
+            System.err.println("Error fetching list from load balancer:" + result.errorMessage());
+            return Optional.empty();
+        } else if (result.get().getStatus() != RequestStatus.DONE) {
+            System.err.println("Fetch status wasn't ready.");
+            return Optional.empty();
+        }
+
+        FetchListInfo info = result.get();
+
+        return Optional.of(info.getListJson());
     }
 
     private void addItem(JTextField field) {
@@ -140,10 +243,11 @@ public class MockUI extends JFrame {
     private void updateItemList() {
         this.itemListPanel.removeAll();
 
-        for (String item : this.sl.keySet()) {
+        for (Pair<String, Integer> entry: this.sl.read()) {
             JPanel itemContainer = new JPanel(new BorderLayout());
 
-            int quantity = (int) this.sl.get(item);
+            String item = entry.getFirst();
+            int quantity = entry.getSecond();
 
             JLabel nameLabel = new JLabel(item);
             JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -173,18 +277,18 @@ public class MockUI extends JFrame {
 
     private ActionListener createIncrementActionListener(String itemName) {
         return e -> {
-            int currentQuantity = (int) this.sl.get(itemName);
-            this.sl.put(itemName, currentQuantity + 1);
+            Optional<Integer> currentQuantity = this.sl.get(itemName);
+
+            currentQuantity.ifPresent(integer -> this.sl.put(itemName, integer + 1));
+
             updateItemList();
         };
     }
 
     private ActionListener createDecrementActionListener(String itemName, int currentQuantity) {
         return e -> {
-            if (currentQuantity > 0) {
-                this.sl.put(itemName, currentQuantity - 1);
-                updateItemList();
-            }
+            this.sl.put(itemName, currentQuantity - 1);
+            updateItemList();
         };
     }
 

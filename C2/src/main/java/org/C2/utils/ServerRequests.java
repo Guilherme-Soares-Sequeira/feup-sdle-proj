@@ -1,6 +1,7 @@
 package org.C2.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.gson.JsonObject;
 import okhttp3.*;
 import org.C2.cloud.ConsistentHasher;
 import org.C2.crdts.ORMap;
@@ -25,7 +26,11 @@ public class ServerRequests {
     @NotNull
     private static <T> HttpResult<T> httpErrorFromResponse(Response response) {
         try {
-            JSONObject body = new JSONObject(new JSONTokener(response.body().string()));
+            ResponseBody repbody = response.body();
+
+            System.out.println("Response body in httpErrorFromResponse: " + repbody.string());
+            JSONObject body = new JSONObject(new JSONTokener(repbody.string()));
+
             String errorMessage = body.getString(JsonKeys.errorMessage);
             return HttpResult.err(response.code(), errorMessage);
 
@@ -294,7 +299,7 @@ public class ServerRequests {
     // ------------------------------------ PUT /external/shopping-list/ -----------------------------------------------
 
     public static HttpResult<Void> putExternalShoppingList(ServerInfo serverInfo, String listId, String crdtJson, String forId) {
-        String url = format("http://{0}/exernal/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
+        String url = format("http://{0}/external/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
 
         return putExternalShoppingList(url, crdtJson, forId);
     }
@@ -312,21 +317,224 @@ public class ServerRequests {
     }
 
     public static HttpResult<Void> putExternalShoppingList(String url, String crdtJson, String forId) {
-        JSONObject putJson = new JSONObject();
 
-        putJson.put(JsonKeys.list, crdtJson);
-        putJson.put(JsonKeys.forId, forId);
+
+        JsonObject putJson = new JsonObject();
+
+        putJson.addProperty(JsonKeys.list, crdtJson);
+        putJson.addProperty(JsonKeys.forId, forId);
 
         RequestBody putBody = RequestBody.create(putJson.toString(), MediaType.parse("application/json"));
 
         Request putRequest = new Request.Builder().url(url).put(putBody).build();
 
-        try (Response response = client.newCall(putRequest).execute()) {
+        Call call = client.newCall(putRequest);
+
+        try (Response response = call.execute()) {
+
             if (response.code() != 202) {
+                System.out.println("response code is not 202");
+
                 return httpErrorFromResponse(response);
             }
 
             return HttpResult.ok(response.code(), null);
+        } catch (Exception e) {
+            System.out.println("exception: " + e);
+            return HttpResult.err(999, "Couldn't execute request: " + e);
+        }
+    }
+
+    // -------------------------------------- PUT loadbalancer/write/{ID} ----------------------------------------------
+    public static HttpResult<String> requestWrite(ServerInfo serverInfo, String listID, ORMap list) {
+        String url = format("/write/{0}", listID);
+
+        return requestWrite(url, list);
+    }
+
+    public static HttpResult<String> requestWrite(ServerInfo serverInfo, String listID, String list) {
+        String url = format("/write/{0}", listID);
+
+        return requestWrite(url, list);
+    }
+
+    public static HttpResult<String> requestWrite(String url, ORMap list) {
+        String listJson = list.toJson();
+
+        return requestWrite(url, listJson);
+    }
+
+    public static HttpResult<String> requestWrite(String url, String listJson) {
+        JsonObject putJson = new JsonObject();
+
+        putJson.addProperty(JsonKeys.list, listJson);
+        RequestBody putBody = RequestBody.create(putJson.toString(), MediaType.parse("application/json"));
+
+        Request putRequest = new Request.Builder().url(url).put(putBody).build();
+
+        try (Response response = client.newCall(putRequest).execute()) {
+            if (response.body() == null) {
+                return HttpResult.err(response.code(), "Request body is null.");
+            }
+
+            if (response.code() != 202) {
+                return httpErrorFromResponse(response);
+            }
+
+            JSONObject bodyJson;
+            try {
+                bodyJson = new JSONObject(new JSONTokener(response.body().string()));
+            } catch (Exception e) {
+                return HttpResult.err(999, "Couldn't parse body from response: " + e);
+            }
+
+            try {
+                String shoppingListJson = bodyJson.getString(JsonKeys.forId);
+
+                return HttpResult.ok(response.code(), shoppingListJson);
+            }
+            // Couldn't parse ConsistentHasher -> error
+            catch (Exception e) {
+                return HttpResult.err(response.code(), format("Could not get forId from json: {0}", e));
+            }
+
+        } catch (Exception e) {
+            return HttpResult.err(999, "Couldn't execute request: " + e);
+        }
+    }
+
+    // --------------------------------------- GET loadbalancer/read/{ID} ----------------------------------------------
+    public static HttpResult<String> requestRead(ServerInfo serverInfo, String listID) {
+        String url = format("/read/{0}", listID);
+
+        return requestRead(url);
+    }
+
+    public static HttpResult<String> requestRead(String url) {
+
+        Request putRequest = new Request.Builder().url(url).get().build();
+
+        try (Response response = client.newCall(putRequest).execute()) {
+            if (response.body() == null) {
+                return HttpResult.err(response.code(), "Request body is null.");
+            }
+
+            if (response.code() != 202) {
+                return httpErrorFromResponse(response);
+            }
+
+            JSONObject bodyJson;
+            try {
+                bodyJson = new JSONObject(new JSONTokener(response.body().string()));
+            } catch (Exception e) {
+                return HttpResult.err(999, "Couldn't parse body from response: " + e);
+            }
+
+            try {
+                String shoppingListJson = bodyJson.getString(JsonKeys.forId);
+
+                return HttpResult.ok(response.code(), shoppingListJson);
+            }
+            // Couldn't parse ConsistentHasher -> error
+            catch (Exception e) {
+                return HttpResult.err(response.code(), format("Could not get forId from json: {0}", e));
+            }
+
+        } catch (Exception e) {
+            return HttpResult.err(999, "Couldn't execute request: " + e);
+        }
+    }
+
+    // --------------------------------------- GET loadbalancer/client/poll/{forID} ---------------------------------------
+
+    public static HttpResult<RequestStatus> pollRequest(ServerInfo serverInfo, String forId) {
+        String url = format("/client/poll/{0}", forId);
+
+        return pollRequest(url);
+    }
+
+    public static HttpResult<RequestStatus> pollRequest(String url) {
+        Request putRequest = new Request.Builder().url(url).get().build();
+
+        try (Response response = client.newCall(putRequest).execute()) {
+            if (response.body() == null) {
+                return HttpResult.err(response.code(), "Request body is null.");
+            }
+
+            if (response.code() != 200) {
+                return httpErrorFromResponse(response);
+            }
+
+            JSONObject bodyJson;
+            try {
+                bodyJson = new JSONObject(new JSONTokener(response.body().string()));
+            } catch (Exception e) {
+                return HttpResult.err(999, "Couldn't parse body from response: " + e);
+            }
+
+            String statusString;
+            try {
+                statusString = bodyJson.getString(JsonKeys.status);
+            } catch (Exception e) {
+                return HttpResult.err(999, "Could not extract status from response body: " + e);
+            }
+
+            RequestStatus status = RequestStatus.valueOf(statusString);
+            return HttpResult.ok(200, status);
+        } catch (Exception e) {
+            return HttpResult.err(999, "Couldn't execute request: " + e);
+        }
+    }
+
+    // ---------------------------------- GET loadbalancer/client/read/{forID} --------------------------------------------
+
+    public static HttpResult<FetchListInfo> fetchList(ServerInfo serverInfo, String forId) {
+        String url = format("/client/read/{0}", forId);
+
+        return fetchList(url);
+    }
+
+    public static HttpResult<FetchListInfo> fetchList(String url) {
+        Request putRequest = new Request.Builder().url(url).get().build();
+
+        try (Response response = client.newCall(putRequest).execute()) {
+            if (response.body() == null) {
+                return HttpResult.err(response.code(), "Request body is null.");
+            }
+
+            if (response.code() != 200) {
+                return httpErrorFromResponse(response);
+            }
+
+            JSONObject bodyJson;
+            try {
+                bodyJson = new JSONObject(new JSONTokener(response.body().string()));
+            } catch (Exception e) {
+                return HttpResult.err(999, "Couldn't parse body from response: " + e);
+            }
+
+            RequestStatus status;
+            try {
+                status = RequestStatus.valueOf(bodyJson.getString(JsonKeys.status));
+            } catch (Exception e) {
+                return HttpResult.err(999, "Could not extract status from response body: " + e);
+            }
+
+            if (status.equals(RequestStatus.PROCESSING) || status.equals(RequestStatus.ERROR)) {
+                return HttpResult.ok(200, new FetchListInfo(status));
+            }
+
+            ORMap list;
+            try {
+                String listJson = bodyJson.getString(JsonKeys.status);
+                list = ORMap.fromJson(listJson);
+            } catch (JsonProcessingException e) {
+                return HttpResult.err(999, "Could not parse list from JSON: " + e);
+            } catch (Exception e) {
+                return HttpResult.err(999, "Could not extract status from response body: " + e);
+            }
+
+            return HttpResult.ok(200, new FetchListInfo(status, list));
         } catch (Exception e) {
             return HttpResult.err(999, "Couldn't execute request: " + e);
         }

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.C2.crdts.Dot;
+import org.C2.crdts.serializing.SerializingConstants;
 
 import java.io.IOException;
 
@@ -22,8 +23,8 @@ public class DotDeserializer extends StdDeserializer<Dot> {
     @Override
     public Dot deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
         JsonNode root = p.getCodec().readTree(p);
-        String replicaID = root.get("replicaID").asText();
-        int sequenceNumber = root.get("sequenceNumber").asInt();
+        String replicaID = root.get(SerializingConstants.REPLICA_ID).asText();
+        int sequenceNumber = root.get(SerializingConstants.SEQUENCE_NUMBER).asInt();
 
         return new Dot(replicaID, sequenceNumber);
     }

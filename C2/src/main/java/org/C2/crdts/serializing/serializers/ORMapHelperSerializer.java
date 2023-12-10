@@ -25,7 +25,7 @@ public class ORMapHelperSerializer extends StdSerializer<ORMapHelper>{
             var objectName = entry.getKey();
             var dot = entry.getValue();
             var dottedValue = new HashMap<String, Object>();
-            dottedValue.put("objectName", objectName);
+            dottedValue.put(SerializingConstants.OBJECT_NAME, objectName);
             dottedValue.put(SerializingConstants.REPLICA_ID, dot.getReplicaID());
             dottedValue.put(SerializingConstants.SEQUENCE_NUMBER, dot.getSequenceNumber());
 

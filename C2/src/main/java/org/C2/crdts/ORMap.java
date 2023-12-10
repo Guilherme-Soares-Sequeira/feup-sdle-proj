@@ -153,12 +153,39 @@ public class ORMap{
         return res;
     }
 
+    public Optional<Integer> get(String id) {
+        CCounter var = this.map.get(id);
 
+        if (var == null) return Optional.empty();
 
+        return Optional.of(var.value());
+    }
 
+    public void put(String id, int value) {
+        if (get(id).isEmpty()) {
+            insert(id);
+        }
 
-    public String toJson() throws JsonProcessingException {
-        return jsonMapper.writeValueAsString(this);
+        CCounter counter = value(id);
+
+        /*
+         TODO: ver esta implementação. não sei se vou ter tocar no dorContext do ORMAP
+        */
+
+        if (counter.value() > value) {
+            counter.dec(counter.value() - value);
+        }
+        else if (counter.value() < value) {
+            counter.inc(value - counter.value());
+        }
+    }
+
+    public String toJson() {
+        try {
+            return jsonMapper.writeValueAsString(this);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not parse ORMAP to json: " + e);
+        }
     }
 
     public static ORMap fromJson(String json) throws JsonProcessingException {

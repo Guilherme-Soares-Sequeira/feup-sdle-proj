@@ -6,11 +6,13 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.C2.crdts.CCounter;
-import org.C2.crdts.DotContext;
 import org.C2.crdts.ORMap;
 import org.C2.crdts.ORMapHelper;
+import org.C2.crdts.serializing.SerializingConstants;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class ORMapDeserializer extends StdDeserializer<ORMap> {
@@ -26,9 +28,21 @@ public class ORMapDeserializer extends StdDeserializer<ORMap> {
     @Override
     public ORMap deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
         JsonNode root = p.getCodec().readTree(p);
-        String replicaID = root.get("replicaID").asText();
-        Map<String, CCounter> map = p.getCodec().treeToValue(root.get("map"), Map.class);
-        ORMapHelper kernel = p.getCodec().treeToValue(root.get("mapKernel"), ORMapHelper.class);
+        String replicaID = root.get(SerializingConstants.MAP_ID).asText();
+
+        Map<String, CCounter> map = new HashMap<>();
+
+        JsonNode mapNode = root.get(SerializingConstants.MAP);
+
+        for (Iterator<String> it = mapNode.fieldNames(); it.hasNext(); ) {
+            String itemName = it.next();
+            JsonNode entry = mapNode.get(itemName);
+
+            CCounter counter = p.getCodec().treeToValue(entry, CCounter.class);
+            map.put(itemName, counter);
+        }
+
+        ORMapHelper kernel = p.getCodec().treeToValue(root.get(SerializingConstants.KERNEL), ORMapHelper.class);
         return new ORMap(replicaID, map, kernel);
     }
 }

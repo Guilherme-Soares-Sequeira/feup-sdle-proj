@@ -31,7 +31,7 @@ public class DotKernelSerializer extends StdSerializer<DotKernel>{
 
             dottedValue.put(SerializingConstants.REPLICA_ID, dot.getReplicaID());
             dottedValue.put(SerializingConstants.SEQUENCE_NUMBER, dot.getSequenceNumber());
-            dottedValue.put("dotValue", entry.getValue());
+            dottedValue.put(SerializingConstants.DOT_VALUE, entry.getValue());
 
             return dottedValue;
         }).collect(Collectors.toList());

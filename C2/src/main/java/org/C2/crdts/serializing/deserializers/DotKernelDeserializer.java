@@ -32,7 +32,7 @@ public class DotKernelDeserializer extends StdDeserializer<DotKernel> {
         for(JsonNode dotNode : node.get(SerializingConstants.DOT_MAP)){
             String replicaID = dotNode.get(SerializingConstants.REPLICA_ID).asText();
             int sequenceNumber = dotNode.get(SerializingConstants.SEQUENCE_NUMBER).asInt();
-            int dotValue = dotNode.get("dotValue").asInt();
+            int dotValue = dotNode.get(SerializingConstants.DOT_VALUE).asInt();
             dotMap.put(new Dot(replicaID, sequenceNumber), dotValue);
         }
         DotContext context = jsonParser.getCodec().treeToValue(node.get(SerializingConstants.CONTEXT), DotContext.class);

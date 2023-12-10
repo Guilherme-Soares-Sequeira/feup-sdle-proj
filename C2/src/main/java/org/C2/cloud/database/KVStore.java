@@ -44,7 +44,6 @@ public class KVStore {
     }
 
     public List<String> getLists() {
-        System.out.println("I got called");
 
         List<String> lists = new ArrayList<>();
         try {

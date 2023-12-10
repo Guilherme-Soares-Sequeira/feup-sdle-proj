@@ -1,8 +1,8 @@
 package org.C2.cloud;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import org.C2.crdts.ORMap;
 import org.C2.utils.*;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import spark.Response;
@@ -282,10 +282,9 @@ public class NodeServer extends BaseServer {
         String internalListJson = internalListOpt.get();
 
 
-        // TODO: Change CRDT implementation
-        MockCRDT localCRDT;
+        ORMap localCRDT;
         try {
-            localCRDT = MockCRDT.fromJson(internalListJson);
+            localCRDT = ORMap.fromJson(internalListJson);
         } catch (JsonProcessingException e) {
             String errorMessage = "Could not parse crdt json from internal storage";
             res.status(500);
@@ -295,10 +294,9 @@ public class NodeServer extends BaseServer {
 
         }
 
-        // TODO: Change CRDT implementation
-        MockCRDT receivedCRDT;
+        ORMap receivedCRDT;
         try {
-            receivedCRDT = MockCRDT.fromJson(receivedListJson);
+            receivedCRDT = ORMap.fromJson(receivedListJson);
         } catch (JsonProcessingException e) {
             String errorMessage = "Could not parse received crdt json";
             res.status(400);
@@ -307,7 +305,7 @@ public class NodeServer extends BaseServer {
             return response.toString();
         }
 
-        localCRDT.merge(receivedCRDT);
+        localCRDT.join(receivedCRDT);
 
         this.kvstore.put(listID, localCRDT.toJson());
 
@@ -374,6 +372,7 @@ public class NodeServer extends BaseServer {
     }
 
     private void handleReadOperation(String listID, String endpoint) {
+        System.out.println("GOT INTO HANDLE READ OPERATION");
 
         // Get healthy servers
         var servers = this.ring.getServers(listID, ConsistentHashingParameters.PriorityListLength);
@@ -388,6 +387,7 @@ public class NodeServer extends BaseServer {
             futures.add(future);
         }
 
+
         // Wait for a maximum of 700 milliseconds for all tasks to complete
         try {
             CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
@@ -396,9 +396,9 @@ public class NodeServer extends BaseServer {
             // do nothing
         }
 
+
         // Extract CRDTs and update Ring from requests that finished successfully
-        // TODO: Change CRDT implementation
-        List<MockCRDT> responseList = new ArrayList<>();
+        List<ORMap> responseList = new ArrayList<>();
 
         for (CompletableFuture<ShoppingListReturn> future : futures) {
             if (future.isDone() && !future.isCompletedExceptionally()) {
@@ -431,13 +431,14 @@ public class NodeServer extends BaseServer {
             return;
         }
 
-        // TODO: Change CRDT implementation
-        // ASOOM there is at least two...
-        MockCRDT accum = responseList.get(0);
+        ORMap accum = responseList.get(0);
 
         for (int i = 1; i < responseList.size(); i++) {
-            accum.merge(responseList.get(i));
+            System.out.println();
+            accum.join(responseList.get(i));
         }
+
+
 
         // Update local view of list
         this.kvstore.put(listID, accum.toJson());
@@ -459,7 +460,7 @@ public class NodeServer extends BaseServer {
                 throw new RuntimeException("Runtime Exception due to local database not having the requested list");
             }
             try {
-                return new ShoppingListReturn(MockCRDT.fromJson(localListOpt.get()), Optional.empty()) ;
+                return new ShoppingListReturn(ORMap.fromJson(localListOpt.get()), Optional.empty()) ;
             } catch (Exception e) {
                 String errorMessage = "Failed to parse CRDT from JSON: " + e;
                 this.logError(errorMessage, endpoint);
@@ -532,10 +533,9 @@ public class NodeServer extends BaseServer {
             return response.toString();
         }
 
-        // TODO: Change CRDT implementation
-        MockCRDT listToPut;
+        ORMap listToPut;
         try {
-            listToPut = MockCRDT.fromJson(listJson);
+            listToPut = ORMap.fromJson(listJson);
 
         } catch (Exception ignored) {
             final String errorString = "Failed to parse CRDT from JSON.";
@@ -573,8 +573,7 @@ public class NodeServer extends BaseServer {
         return "";
     }
 
-    // TODO: Change CRDT implementation
-    private void handleWriteOperation(String listID, MockCRDT list, String endpoint, String forId) {
+    private void handleWriteOperation(String listID, ORMap list, String endpoint, String forId) {
 
         // Get healthy servers
         var servers = this.ring.getServers(listID, ConsistentHashingParameters.PriorityListLength);
@@ -630,8 +629,7 @@ public class NodeServer extends BaseServer {
         this.logWarning(endpoint, format("[SIMULATION] WRITE OK: sending OK to loadbalancer... for = {0}", forId));
     }
 
-    // TODO: Change CRDT implementation
-    private HttpResult<Void> asyncWriteRequest(String listId, MockCRDT toPutList, String endpoint, ServerInfo server) {
+    private HttpResult<Void> asyncWriteRequest(String listId, ORMap toPutList, String endpoint, ServerInfo server) {
         if (server.equals(this.serverInfo)) {
             try {
                 Optional<String> localListJsonOpt = this.kvstore.get(listId);
@@ -640,9 +638,8 @@ public class NodeServer extends BaseServer {
                     this.kvstore.put(listId, toPutList.toJson());
 
                 } else {
-                    // TODO: Change CRDT implementation
-                    var localList = MockCRDT.fromJson(localListJsonOpt.get());
-                    localList.merge(toPutList);
+                    var localList = ORMap.fromJson(localListJsonOpt.get());
+                    localList.join(toPutList);
                     this.kvstore.put(listId, localList.toJson());
                 }
 

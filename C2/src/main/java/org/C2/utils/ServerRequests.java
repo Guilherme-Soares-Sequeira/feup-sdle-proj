@@ -3,9 +3,8 @@ package org.C2.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import okhttp3.*;
 import org.C2.cloud.ConsistentHasher;
-import org.eclipse.jetty.server.Server;
+import org.C2.crdts.ORMap;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -197,7 +196,7 @@ public class ServerRequests {
 
             try {
                 String shoppingListJson = bodyJson.getString(JsonKeys.list);
-                MockCRDT receivedCRDT = MockCRDT.fromJson(shoppingListJson);
+                ORMap receivedCRDT = ORMap.fromJson(shoppingListJson);
 
                 return HttpResult.ok(response.code(), new ShoppingListReturn(receivedCRDT, receivedCH == null ? Optional.empty() : Optional.of(receivedCH)));
             }
@@ -214,14 +213,14 @@ public class ServerRequests {
 
     // --------------------------------------------- PUT /internal/shopping-list/ --------------------------------------
 
-    public static HttpResult<Void> putInternalShoppingList(ServerInfo serverInfo, String listId, MockCRDT toPut, ConsistentHasher gossipCH) {
+    public static HttpResult<Void> putInternalShoppingList(ServerInfo serverInfo, String listId, ORMap toPut, ConsistentHasher gossipCH) {
         String url = format("http://{0}/internal/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
 
         return putInternalShoppingList(url, toPut, gossipCH);
     }
 
-    // TODO: Change CRDT implementation
-    public static HttpResult<Void> putInternalShoppingList(String url, MockCRDT toPut, ConsistentHasher gossipCH) {
+    
+    public static HttpResult<Void> putInternalShoppingList(String url, ORMap toPut, ConsistentHasher gossipCH) {
         String crdtJson, chJson;
 
         crdtJson = toPut.toJson();
@@ -300,14 +299,14 @@ public class ServerRequests {
         return putExternalShoppingList(url, crdtJson, forId);
     }
 
-    public static HttpResult<Void> putExternalShoppingList(ServerInfo serverInfo, String listId, MockCRDT toPut, String forId) {
+    public static HttpResult<Void> putExternalShoppingList(ServerInfo serverInfo, String listId, ORMap toPut, String forId) {
         String url = format("http://{0}/external/shopping-list/{1}", serverInfo.fullRepresentation(), listId);
 
         return putExternalShoppingList(url, toPut, forId);
     }
 
-    // TODO: Change CRDT implementation
-    public static HttpResult<Void> putExternalShoppingList(String url, MockCRDT toPut, String forId) {
+
+    public static HttpResult<Void> putExternalShoppingList(String url, ORMap toPut, String forId) {
         String crdtJson = toPut.toJson();
         return putExternalShoppingList(url, crdtJson, forId);
     }

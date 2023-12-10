@@ -68,14 +68,15 @@ public class CCounter {
 
         CCounter res = new CCounter(this.id);
         Set<Dot> dots = new HashSet<>();
-        Integer base= 0;
+        Integer base = 0;
         for(Map.Entry<Dot, Integer> entry: this.dotKernel.getDotMap().entrySet()){
+            // TODO: Isto não devia ser um .equals ?
             if(entry.getKey().getReplicaID() == this.id){
-                base=Math.max(base, entry.getValue());
+                base = Math.max(base, entry.getValue());
                 dots.add(entry.getKey());
             }
         }
-        for(Dot dot: dots){
+        for(Dot dot : dots){
             res.getDotKernel().join(this.dotKernel.remove(dot));
         }
         res.getDotKernel().join(this.dotKernel.add(this.id, base+value));
@@ -87,14 +88,15 @@ public class CCounter {
 
         CCounter res = new CCounter(this.id);
         Set<Dot> dots = new HashSet<>();
-        Integer base= 0;
+        Integer base = 0;
         for(Map.Entry<Dot, Integer> entry: this.dotKernel.getDotMap().entrySet()){
+            // TODO: Isto não devia ser um .equals ?
             if(entry.getKey().getReplicaID() == this.id){
-                base=Math.max(base, entry.getValue());
+                base = Math.max(base, entry.getValue());
                 dots.add(entry.getKey());
             }
         }
-        for(Dot dot: dots){
+        for(Dot dot : dots){
             res.getDotKernel().join(this.dotKernel.remove(dot));
         }
 
@@ -108,7 +110,7 @@ public class CCounter {
         res.dotKernel = dotKernel.remove();
         return res;
     }
-    public void join (CCounter other) {
+    public void join(CCounter other) {
         this.getDotKernel().join(other.getDotKernel());
     }
 

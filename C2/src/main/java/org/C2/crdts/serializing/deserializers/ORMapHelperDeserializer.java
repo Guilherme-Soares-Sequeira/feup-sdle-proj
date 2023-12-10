@@ -29,10 +29,10 @@ public class ORMapHelperDeserializer extends StdDeserializer<ORMapHelper> {
     public ORMapHelper deserialize(JsonParser jsonParser, DeserializationContext ctxt) throws IOException, JacksonException {
         JsonNode node = jsonParser.getCodec().readTree(jsonParser);
         Map<String, Dot> dotMap = new HashMap<>();
-        for(JsonNode dotNode : node.get("helperDotMap")){
-            String objectName = dotNode.get("objectName").asText();
-            String replicaID = dotNode.get("replicaID").asText();
-            int sequenceNumber = dotNode.get("sequenceNumber").asInt();
+        for(JsonNode dotNode : node.get(SerializingConstants.HELPER_DOT_MAP)){
+            String objectName = dotNode.get(SerializingConstants.OBJECT_NAME).asText();
+            String replicaID = dotNode.get(SerializingConstants.REPLICA_ID).asText();
+            int sequenceNumber = dotNode.get(SerializingConstants.SEQUENCE_NUMBER).asInt();
             dotMap.put(objectName, new Dot(replicaID, sequenceNumber));
         }
         DotContext context = jsonParser.getCodec().treeToValue(node.get(SerializingConstants.HELPER_CONTEXT), DotContext.class);

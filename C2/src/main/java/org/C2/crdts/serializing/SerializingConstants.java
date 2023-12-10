@@ -34,4 +34,7 @@ public class SerializingConstants {
 
     public static final String HELPER_CONTEXT = "helperContext";
 
+    public static final String DOT_VALUE = "dotValue";
+
+    public static final String OBJECT_NAME = "objectName";
 }

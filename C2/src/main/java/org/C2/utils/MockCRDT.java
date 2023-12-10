@@ -50,6 +50,22 @@ public class MockCRDT {
         return this;
     }
 
+    public boolean isEquivalent(MockCRDT other) {
+        var localKeys = this.getShoppingList().keySet();
+        var otherKeys = other.getShoppingList().keySet();
+
+        if (!localKeys.equals(otherKeys)) return false;
+
+        for (var key : localKeys) {
+            Integer localValue = get(key);
+            Integer otherValue = other.get(key);
+
+            if (!localValue.equals(otherValue)) return false;
+        }
+
+        return true;
+    }
+
     public String toJson() {
         try {
             return this.jsonMapper.writeValueAsString(this);
@@ -62,4 +78,5 @@ public class MockCRDT {
         ObjectMapper jsonMapper = new ObjectMapper();
         return jsonMapper.readValue(json, MockCRDT.class);
     }
+
 }

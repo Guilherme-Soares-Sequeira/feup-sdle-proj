@@ -7,6 +7,38 @@ import org.junit.jupiter.api.Test;
 import static java.text.MessageFormat.format;
 
 public class MockCRDTTest {
+
+    @Test
+    public void isEquivalent() {
+        MockCRDT sl1 = new MockCRDT();
+        MockCRDT sl2 = new MockCRDT();
+
+        Assertions.assertTrue(sl1.isEquivalent(sl2));
+        Assertions.assertTrue(sl2.isEquivalent(sl1));
+
+        sl1.put("banana", 1);
+
+        Assertions.assertFalse(sl2.isEquivalent(sl1));
+        Assertions.assertFalse(sl1.isEquivalent(sl2));
+
+        sl2.put("apple", 1);
+
+        Assertions.assertFalse(sl1.isEquivalent(sl2));
+        Assertions.assertFalse(sl2.isEquivalent(sl1));
+
+        sl1.put("apple", 2);
+        sl2.put("banana", 1);
+
+        Assertions.assertFalse(sl1.isEquivalent(sl2));
+        Assertions.assertFalse(sl2.isEquivalent(sl1));
+
+        sl2.put("apple", 2);
+
+        Assertions.assertTrue(sl1.isEquivalent(sl2));
+        Assertions.assertTrue(sl2.isEquivalent(sl1));
+    }
+
+
     @Test
     public void mergeTest() {
         MockCRDT sl1 = new MockCRDT();

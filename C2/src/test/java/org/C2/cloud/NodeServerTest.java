@@ -12,10 +12,7 @@ import okhttp3.MediaType;
 import spark.utils.Assert;
 
 import static java.text.MessageFormat.format;
-
-
-import static spark.Spark.put;
-import static spark.Spark.stop;
+import static spark.Spark.*;
 
 public class NodeServerTest {
     private NodeServer server;
@@ -32,6 +29,8 @@ public class NodeServerTest {
     @AfterEach
     public void tearDown() {
         stop();
+
+        
 
         try {
             Thread.sleep(50);
@@ -119,10 +118,17 @@ public class NodeServerTest {
 
         ConsistentHasher ch = new ConsistentHasher(-1);
 
-        var result = ServerRequests.putInternalShoppingList(this.serverInfo, listID, sl1, ch);
-        
-        Assertions.assertTrue(result.isOk());
+        var putResult = ServerRequests.putInternalShoppingList(this.serverInfo, listID, sl1, ch);
 
+        Assertions.assertTrue(putResult.isOk());
+
+        var getResult = ServerRequests.getInternalShoppingList(this.serverInfo, listID);
+
+        Assertions.assertTrue(getResult.isOk());
+
+        MockCRDT receivedList = getResult.get().crdt();
+
+        Assertions.assertTrue(receivedList.isEquivalent(sl1));
     }
 
 

@@ -131,4 +131,47 @@ public class ORMapTest {
 
     }
 
+    @Test
+    public void testMergeSameOld(){
+        ORMap ormap1 = new ORMap("a");
+        ORMap ormap2 = new ORMap("b");
+
+        ormap1.put("banana", 1);
+        ormap2.insert("banana");
+        ormap1.erase("banana");
+        ormap1.join(ormap2);
+        Assertions.assertEquals(0, ormap1.get("banana").get());
+    }
+
+    @Test
+    public void testNotRepeated(){
+        ORMap ormap1 = new ORMap("a");
+        ORMap ormap2 = new ORMap("b");
+
+        ormap1.put("banana", 1);
+        ormap1.value("banana").inc(1);
+        ormap2.join(ormap1);
+        ormap2.value("banana").inc(2);
+        ormap1.join(ormap2);
+        Assertions.assertEquals(4, ormap1.get("banana").get());
+    }
+
+    @Test
+    public void testRepeated(){
+        ORMap ormap1 = new ORMap("a");
+        ORMap ormap2 = new ORMap("b");
+        ORMap ormap3 = new ORMap("c");
+        ORMap ormap4 = new ORMap("d");
+
+        ormap1.put("banana", 1);
+        ormap1.value("banana").inc(1);
+        ormap2.join(ormap1);
+        ormap2.value("banana").inc(2);
+        ormap3.join(ormap1);
+        ormap3.join(ormap2);
+        ormap4.join(ormap2);
+        ormap4.join(ormap1);
+        Assertions.assertTrue(ormap3.isEquivalent(ormap4));
+    }
+
 }

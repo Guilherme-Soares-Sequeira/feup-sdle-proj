@@ -10,4 +10,6 @@ public record SeedServers() {
             new ServerInfo("localhost", 3884),
             new ServerInfo("localhost", 3885)
     );
+
+    public static final int NUM_VIRTUAL_NODES = 2;
 }

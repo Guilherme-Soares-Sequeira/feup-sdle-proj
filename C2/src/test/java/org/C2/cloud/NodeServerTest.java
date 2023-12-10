@@ -10,10 +10,7 @@ import org.C2.utils.ServerRequests;
 import org.C2.utils.HttpResult;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import okhttp3.MediaType;
 import spark.utils.Assert;
 
@@ -35,12 +32,23 @@ public class NodeServerTest {
     @AfterEach
     public void tearDown() {
         stop();
+
+        try {
+            Thread.sleep(50);
+        } catch (Exception e) {
+            System.out.println("THREAD SLEEP WAS CANCELED");
+        }
     }
 
     @Test
     public void getInternalRingTest() throws Exception {
         ConsistentHasher expectedRing = new ConsistentHasher(0);
+
         expectedRing.addServer(new ServerInfo("localhost", 4444), 3);
+        for (ServerInfo seedInfo : SeedServers.SEEDS_INFO) {
+            expectedRing.addServer(seedInfo, SeedServers.NUM_VIRTUAL_NODES);
+        }
+
         ConsistentHasher notExpectedRing = new ConsistentHasher(0);
 
         String url = "http://localhost:4444/internal/ring";
@@ -105,6 +113,6 @@ public class NodeServerTest {
         OkHttpClient client = new OkHttpClient();
         String url = "http://localhost:4444/1";
     }
-    
+
 
 }

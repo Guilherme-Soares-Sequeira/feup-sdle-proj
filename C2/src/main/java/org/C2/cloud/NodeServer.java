@@ -46,8 +46,12 @@ public class NodeServer extends BaseServer {
     }
 
     @Override
-    public void init() {
+    public synchronized void init() {
         this.ring.addServer(this.serverInfo, this.numberOfVirtualNodes);
+
+        for (ServerInfo serverInfo : SeedServers.SEEDS_INFO) {
+            this.ring.addServer(serverInfo, SeedServers.NUM_VIRTUAL_NODES);
+        }
 
         var lists = this.kvstore.getLists();
         for (var list : lists) {
@@ -62,7 +66,7 @@ public class NodeServer extends BaseServer {
     }
 
     @Override
-    protected void defineRoutes() {
+    protected synchronized void defineRoutes() {
         get("/pulse", this::pulse);
 
         get("/internal/ring", this::getInternalRing);
@@ -638,7 +642,7 @@ public class NodeServer extends BaseServer {
      * @param newRing ConsistentHasher that will replace current ring if current ring is older
      * @return True if ring was updated, false otherwise
      */
-    protected boolean updateRingIfMoreRecent(ConsistentHasher newRing) {
+    protected synchronized boolean updateRingIfMoreRecent(ConsistentHasher newRing) {
         if (!this.ring.olderThan(newRing)) {
             return false;
         }

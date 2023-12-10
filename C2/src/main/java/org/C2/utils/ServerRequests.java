@@ -177,11 +177,17 @@ public class ServerRequests {
                 return httpErrorFromResponse(response);
             }
 
+            JSONObject bodyJson;
+            try {
+                bodyJson = new JSONObject(new JSONTokener(response.body().string()));
+            } catch (Exception e) {
+                return HttpResult.err(999, "Couldn't parse body from response: " + e);
+            }
+
             // Try to get consistent hasher, else do nothing
             ConsistentHasher receivedCH;
             try {
-                JSONObject body = new JSONObject(new JSONTokener(response.body().string()));
-                String receivedCHjson = body.getString(JsonKeys.ring);
+                String receivedCHjson = bodyJson.getString(JsonKeys.ring);
                 receivedCH = ConsistentHasher.fromJSON(receivedCHjson);
             }
             // Couldn't parse ConsistentHasher -> do nothing
@@ -190,8 +196,7 @@ public class ServerRequests {
             }
 
             try {
-                JSONObject body = new JSONObject(new JSONTokener(response.body().string()));
-                String shoppingListJson = body.getString(JsonKeys.list);
+                String shoppingListJson = bodyJson.getString(JsonKeys.list);
                 MockCRDT receivedCRDT = MockCRDT.fromJson(shoppingListJson);
 
                 return HttpResult.ok(response.code(), new ShoppingListReturn(receivedCRDT, receivedCH == null ? Optional.empty() : Optional.of(receivedCH)));

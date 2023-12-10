@@ -4,7 +4,6 @@ import org.C2.cloud.ConsistentHasher;
 import org.C2.cloud.LoadBalancer;
 import org.C2.cloud.NodeServer;
 import org.C2.cloud.SeedServers;
-import org.C2.ui.MockUI;
 import org.C2.utils.ServerInfo;
 import org.C2.utils.ServerRequests;
 

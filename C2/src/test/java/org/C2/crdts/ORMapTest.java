@@ -186,4 +186,18 @@ public class ORMapTest {
         }
     }
 
+    @Test
+    public void testSameID()
+    {
+        ORMap ormap1 = new ORMap("server");
+        ORMap ormap2 = new ORMap("b");
+        ORMap ormap3 = new ORMap("b");
+
+        ormap2.insert("banana");
+        ormap1.join(ormap2);
+        ormap2.value("banana").inc(1);
+        ormap1.join(ormap2);
+        ormap3.join(ormap1);
+    }
+
 }

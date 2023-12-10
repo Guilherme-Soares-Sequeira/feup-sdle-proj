@@ -43,6 +43,9 @@ public class Dot {
     }
 
 
+    public boolean isEqual(Dot dot) {
+        return (this.replicaID.equals(dot.replicaID) && this.sequenceNumber == dot.sequenceNumber);
+    }
     public void print() {
         System.out.println("Replica ID: " + this.replicaID);
         System.out.println("Sequence Number: " + this.sequenceNumber);

@@ -45,6 +45,7 @@ public class KVStore {
 
     public List<String> getLists() {
         System.out.println("I got called");
+
         List<String> lists = new ArrayList<>();
         try {
             Files.walkFileTree(Paths.get(directory), EnumSet.noneOf(FileVisitOption.class), 1,
@@ -65,6 +66,7 @@ public class KVStore {
             return lists;
         } catch (Exception e) {
             System.out.println("GOt an exception");
+
             throw new RuntimeException("Couldn't read local lists: " + e);
         }
     }
@@ -92,9 +94,7 @@ public class KVStore {
 
             return Optional.of(content.toString());
         } catch (IOException | JSONException e) {
-            if (this.logging) {
-                this.logger.log(Level.SEVERE, "Error while reading file: " + filepath, e);
-            }
+            //if (this.logging) {this.logger.log(Level.SEVERE, "Error while reading file: " + filepath, e);}
 
             return Optional.empty();
         }

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.C2.cloud.serializing.ConsistentHasherDeserializer;
 import org.C2.cloud.serializing.ConsistentHasherSerializer;
-import org.C2.utils.Pair;
+import org.C2.utils.ServerInfo;
 
 import java.security.MessageDigest;
 import java.util.*;
@@ -25,8 +25,8 @@ import static java.text.MessageFormat.format;
 @JsonSerialize(using = ConsistentHasherSerializer.class)
 @JsonDeserialize(using = ConsistentHasherDeserializer.class)
 public class ConsistentHasher  {
-    private final TreeMap<Long, String> ring;
-    private final Map<String, Integer> serverToNumberOfVirtualNodes;
+    private final TreeMap<Long, ServerInfo> ring;
+    private final Map<ServerInfo, Integer> serverToNumberOfVirtualNodes;
     private final long timestamp;
     private final MessageDigest md;
     private final ObjectMapper jsonMapper;
@@ -41,6 +41,10 @@ public class ConsistentHasher  {
     public static ConsistentHasher fromJSON(String json) throws JsonProcessingException {
         ObjectMapper jsonMapper = new ObjectMapper();
         return jsonMapper.readValue(json, ConsistentHasher.class);
+    }
+
+    public static String virtualNodeKey(ServerInfo server, Integer virtualNodeId) {
+        return server.fullRepresentation() + "|" + virtualNodeId;
     }
 
     /**
@@ -58,37 +62,15 @@ public class ConsistentHasher  {
             throw new RuntimeException("Unable to find MD5 algorithm.");
         }
 
-        this.serverToNumberOfVirtualNodes = new HashMap<String, Integer>();
+        this.serverToNumberOfVirtualNodes = new HashMap<ServerInfo, Integer>();
     }
 
     /**
      * Instantiates a ConsistentHasher object with predetermined servers.
      * @param timestamp Defines how updated this ConsistentHasher is, in unix time (seconds since epoch).
-     * @param servers List of pairs containing the key of the server (String) and how many virtual nodes it has (int).
+     * @param servers Map where the key is a ServerInfo object and the value the number of virtual nodes it has.
      */
-    public ConsistentHasher(long timestamp, List<Pair<String , Integer>> servers) {
-        this.jsonMapper = new ObjectMapper();
-        this.ring = new TreeMap<>();
-        this.timestamp = timestamp;
-
-        try {
-            this.md = MessageDigest.getInstance("MD5");
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to find MD5 algorithm.");
-        }
-
-        this.serverToNumberOfVirtualNodes = new HashMap<>();
-        for (Pair<String, Integer> server : servers) {
-            this.addServer(server.getFirst(), server.getSecond());
-        }
-    }
-
-    /**
-     * Instantiates a ConsistentHasher object with predetermined servers.
-     * @param timestamp Defines how updated this ConsistentHasher is, in unix time (seconds since epoch).
-     * @param servers Map where the key is the key of a server and the value the number of virtual nodes it has.
-     */
-    public ConsistentHasher(long timestamp, Map<String, Integer> servers)  {
+    public ConsistentHasher(long timestamp, Map<ServerInfo, Integer> servers)  {
         this.jsonMapper = new ObjectMapper();
         this.ring = new TreeMap<>();
 
@@ -108,20 +90,20 @@ public class ConsistentHasher  {
      * @param server Key that identifies the server.
      * @param numberOfVirtualNodes How many virtual nodes this server is supposed to have.
      */
-    public void addServer(String server, int numberOfVirtualNodes) {
+    public void addServer(ServerInfo server, int numberOfVirtualNodes) {
         this.serverToNumberOfVirtualNodes.put(server, numberOfVirtualNodes);
 
         for (int i = 0; i < numberOfVirtualNodes; i++) {
-            long hash = generateHash(server + i);
+            long hash = generateHash(virtualNodeKey(server, i));
             ring.put(hash, server);
         }
     }
 
     /**
      * Unregisters a server from the consistent hasher.
-     * @param server The key that identifies the server.
+     * @param server ServerInfo object that identifies the server.
      */
-    public void removeServer(String server) {
+    public void removeServer(ServerInfo server) {
         Integer numberOfReplicas = this.serverToNumberOfVirtualNodes.get(server);
 
         if (numberOfReplicas == null) {
@@ -130,7 +112,7 @@ public class ConsistentHasher  {
         }
 
         for (int i = 0; i < numberOfReplicas; i++) {
-            long hash = generateHash(server + i);
+            long hash = generateHash(server.fullRepresentation() + i);
             ring.remove(hash);
         }
     }
@@ -139,9 +121,9 @@ public class ConsistentHasher  {
      * Returns what server is responsible for the given key by finding the next virtual node clockwise, including self
      * (if the hash of the key is equal to the hash of a virtual node, that virtual node is selected).
      * @param key Starting point used to find the appropriate server.
-     * @return The key of the server responsible for the given key.
+     * @return ServerInfo with information of the server responsible for the given key.
      */
-    public String getServer(String key) {
+    public ServerInfo getServer(String key) {
         if (ring.isEmpty()) {
             throw new RuntimeException("Tried to search for a virtual node in the ring but the ring is empty.");
         }
@@ -149,7 +131,7 @@ public class ConsistentHasher  {
         long hash = generateHash(key);
 
         if (!ring.containsKey(hash)) {
-            SortedMap<Long, String> tailMap = ring.tailMap(hash);
+            SortedMap<Long, ServerInfo> tailMap = ring.tailMap(hash);
             hash = tailMap.isEmpty() ? ring.firstKey() : tailMap.firstKey();
         }
 
@@ -164,15 +146,15 @@ public class ConsistentHasher  {
      * @param key Starting point used to find the appropriate server.
      * @param includeSelf If the key's hash coincides with the hash of a virtual node, decides if that virtual node
      *                    is selected or if it searches for the next one.
-     * @return The key of the server responsible for the given key.
+     * @return ServerInfo object with information of the server responsible for the given key.
      */
-    public String getServer(String key, boolean includeSelf) {
+    public ServerInfo getServer(String key, boolean includeSelf) {
         if (this.ring.isEmpty()) {
             throw new RuntimeException("Tried to search for a virtual node in the ring but the ring is empty.");
         }
 
         long hash = generateHash(key);
-        SortedMap<Long, String> tailMap = ring.tailMap(hash, includeSelf);
+        SortedMap<Long, ServerInfo> tailMap = ring.tailMap(hash, includeSelf);
         hash = tailMap.isEmpty() ? ring.firstKey() : tailMap.firstKey();
         return ring.get(hash);
     }
@@ -185,14 +167,14 @@ public class ConsistentHasher  {
      * @param token Starting point used to find the appropriate server.
      * @param includeSelf If the given hash coincides with the hash of a virtual node, decides if that virtual node
      *                    is selected or if it searches for the next one.
-     * @return The key of the server responsible for the given hash.
+     * @return ServerInfo object with information of the server responsible for the given key.
      */
-    public String getServer(long token, boolean includeSelf) {
+    public ServerInfo getServer(long token, boolean includeSelf) {
         if (this.ring.isEmpty()) {
             throw new RuntimeException("Tried to search for a virtual node in the ring but the ring is empty.");
         }
 
-        SortedMap<Long, String> tailMap = ring.tailMap(token, includeSelf);
+        SortedMap<Long, ServerInfo> tailMap = ring.tailMap(token, includeSelf);
          long result_hash = tailMap.isEmpty() ? ring.firstKey() : tailMap.firstKey();
         return ring.get(result_hash);
     }
@@ -207,7 +189,7 @@ public class ConsistentHasher  {
             throw new RuntimeException("Tried to search for a virtual node in the ring but the ring is empty.");
         }
 
-        SortedMap<Long, String> tailMap = ring.tailMap(token, false);
+        SortedMap<Long, ServerInfo> tailMap = ring.tailMap(token, false);
         return tailMap.isEmpty() ? ring.firstKey() : tailMap.firstKey();
     }
 
@@ -222,8 +204,20 @@ public class ConsistentHasher  {
         }
 
         long hash = generateHash(key);
-        SortedMap<Long, String> tailMap = ring.tailMap(hash, false);
+        SortedMap<Long, ServerInfo> tailMap = ring.tailMap(hash, false);
         return tailMap.isEmpty() ? ring.firstKey() : tailMap.firstKey();
+    }
+
+    public long getFirstMatchedToken(TreeSet<Long> matches, String key) {
+        long initialToken = generateHash(key);
+        if (matches.contains(initialToken)) return initialToken;
+
+        long token = getNextToken(initialToken);
+
+        while (true) {
+            if (matches.contains(token)) return token;
+            token = getNextToken(token);
+        }
     }
 
     /**
@@ -233,14 +227,14 @@ public class ConsistentHasher  {
      * @param key Starting point used to find the servers.
      * @param n The number of servers to look for. If there aren't enough servers added in the ring no exception is
      *          thrown, but the result list will have less than n servers.
-     * @return A list containing the keys of the servers found, ordered by first found.
+     * @return A list containing ServerInfo objects of the servers found, ordered by first found.
      */
-    public List<String> getServers(String key, Integer n) {
+    public List<ServerInfo> getServers(String key, Integer n) {
         int numberOfResults = n <= this.serverToNumberOfVirtualNodes.size() ? n : this.serverToNumberOfVirtualNodes.size();
 
         long firstToken = getNextToken(key);
 
-        Set<String> results = new LinkedHashSet<>();
+        Set<ServerInfo> results = new LinkedHashSet<>();
         results.add(this.ring.get(firstToken));
 
         long lastAddedToken = firstToken;
@@ -261,7 +255,7 @@ public class ConsistentHasher  {
      * @param key Input key.
      * @return The hash generated for the key.
      */
-    private long generateHash(String key) {
+    public long generateHash(String key) {
         md.reset();
         md.update(key.getBytes());
         byte[] digest = md.digest();
@@ -284,7 +278,7 @@ public class ConsistentHasher  {
      * serverToNumberOfVirtualNodes getter.
      * @return This ConsistentHasher's getServerToNumberOfVirtualNodes.
      */
-    public Map<String, Integer> getServerToNumberOfVirtualNodes() {
+    public Map<ServerInfo, Integer> getServerToNumberOfVirtualNodes() {
         return this.serverToNumberOfVirtualNodes;
     }
 
@@ -304,7 +298,7 @@ public class ConsistentHasher  {
      * Getter for the One Ring.
      * @return This ConsistentHasher's Ring.
      */
-    public TreeMap<Long, String> getRing() {
+    public TreeMap<Long, ServerInfo> getRing() {
         return this.ring;
     }
 
@@ -338,8 +332,8 @@ public class ConsistentHasher  {
 
         for (var entry : this.ring.entrySet()) {
             long token = entry.getKey();
-            String serverName = entry.getValue();
-            if (! (other.ring.get(token).equals(serverName))) {
+            ServerInfo serverInfo = entry.getValue();
+            if (! (other.ring.get(token).equals(serverInfo))) {
                 return false;
             }
         }
@@ -347,4 +341,11 @@ public class ConsistentHasher  {
         return true;
     }
 
+    public boolean olderThan(ConsistentHasher other) {
+        return this.timestamp <= other.getTimestamp();
+    }
+
+    public Set<ServerInfo> getAllServers() {
+        return this.serverToNumberOfVirtualNodes.keySet();
+    }
 }

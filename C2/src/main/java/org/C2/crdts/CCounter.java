@@ -71,7 +71,7 @@ public class CCounter {
         Integer base = 0;
         for(Map.Entry<Dot, Integer> entry: this.dotKernel.getDotMap().entrySet()){
             if(entry.getKey().getReplicaID().equals(this.id)){
-                base = Math.max(base, entry.getValue());
+                base = entry.getValue();
                 dots.add(entry.getKey());
             }
         }
@@ -90,7 +90,7 @@ public class CCounter {
         Integer base = 0;
         for(Map.Entry<Dot, Integer> entry: this.dotKernel.getDotMap().entrySet()){
             if(entry.getKey().getReplicaID().equals(this.id)){
-                base = Math.max(base, entry.getValue());
+                base = entry.getValue();
                 dots.add(entry.getKey());
             }
         }

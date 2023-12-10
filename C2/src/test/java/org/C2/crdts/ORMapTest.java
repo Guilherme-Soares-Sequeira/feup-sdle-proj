@@ -109,4 +109,26 @@ public class ORMapTest {
         Assertions.assertEquals(4, ormap1.get("orange").get());
     }
 
+    @Test
+    public void testNegative(){
+        ORMap ormap1 = new ORMap("a");
+        ORMap ormap2 = new ORMap("b");
+
+
+        ormap1.put("banana", -1);
+        Assertions.assertEquals(-1, ormap1.get("banana").get());
+        ormap1.value("banana").inc(1);
+        Assertions.assertEquals(0, ormap1.get("banana").get());
+        ormap1.value("banana").dec(3);
+        Assertions.assertEquals(-3, ormap1.get("banana").get());
+        ormap1.value("banana").inc(1);
+        Assertions.assertEquals(-2, ormap1.get("banana").get());
+
+        ormap2.join(ormap1);
+        ormap2.value("banana").dec(1);
+        ormap2.value("banana").inc(2);
+        Assertions.assertEquals(-1, ormap2.get("banana").get());
+
+    }
+
 }

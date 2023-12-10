@@ -120,14 +120,18 @@ public class DotKernel {
 
     public DotKernel remove (Dot dot){
         DotKernel result = new DotKernel();
-        for(Map.Entry<Dot, Integer> entry : this.dotMap.entrySet()){
+        Iterator<Map.Entry<Dot, Integer>> iterator = this.dotMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Dot, Integer> entry = iterator.next();
             Dot key = entry.getKey();
             Integer value = entry.getValue();
-            if(key.getSequenceNumber() == dot.getSequenceNumber()){
+
+            if (key.getSequenceNumber() == dot.getSequenceNumber()) {
                 result.context.insertDot(dot, false);
-                this.dotMap.remove(key);
+                iterator.remove(); // Remove the current entry from the map
             }
         }
+
         result.context.compact();
         return result;
     }

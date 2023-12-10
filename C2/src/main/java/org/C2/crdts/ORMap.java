@@ -191,15 +191,6 @@ public class ORMap {
         return mapper.readValue(json, ORMap.class);
     }
 
-    public void printOrMap() {
-        System.out.println("ORMap: " + this.id);
-        //System.out.println("Context: " + this.context);
-        System.out.println("Map: " + this.map);
-        System.out.println("DotKernel: ");
-        this.dotKernel.print();
-
-    }
-
     public boolean isEquivalent(ORMap other) {
         List otherList = other.read();
         List thisList = this.read();

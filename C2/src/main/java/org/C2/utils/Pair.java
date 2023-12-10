@@ -1,5 +1,7 @@
 package org.C2.utils;
 
+import java.util.Objects;
+
 public class Pair<K,V> {
     private K first;
     private V second;
@@ -24,4 +26,13 @@ public class Pair<K,V> {
     public void setSecond(V second) {
         this.second = second;
     }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pair<?, ?> pair = (Pair<?, ?>) o;
+        return Objects.equals(first, pair.first) &&
+                Objects.equals(second, pair.second);
+    }
+
 }

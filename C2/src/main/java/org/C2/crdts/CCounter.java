@@ -70,8 +70,7 @@ public class CCounter {
         Set<Dot> dots = new HashSet<>();
         Integer base = 0;
         for(Map.Entry<Dot, Integer> entry: this.dotKernel.getDotMap().entrySet()){
-            // TODO: Isto não devia ser um .equals ?
-            if(entry.getKey().getReplicaID() == this.id){
+            if(entry.getKey().getReplicaID().equals(this.id)){
                 base = Math.max(base, entry.getValue());
                 dots.add(entry.getKey());
             }
@@ -90,8 +89,7 @@ public class CCounter {
         Set<Dot> dots = new HashSet<>();
         Integer base = 0;
         for(Map.Entry<Dot, Integer> entry: this.dotKernel.getDotMap().entrySet()){
-            // TODO: Isto não devia ser um .equals ?
-            if(entry.getKey().getReplicaID() == this.id){
+            if(entry.getKey().getReplicaID().equals(this.id)){
                 base = Math.max(base, entry.getValue());
                 dots.add(entry.getKey());
             }

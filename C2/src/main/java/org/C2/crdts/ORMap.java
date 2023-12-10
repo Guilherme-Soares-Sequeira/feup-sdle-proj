@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @JsonSerialize(using = ORMapSerializer.class)
 @JsonDeserialize(using = ORMapDeserializer.class)
-public class ORMap{
+public class ORMap {
 
     private Map<String, CCounter> map;
     private ORMapHelper dotKernel;
@@ -38,21 +38,24 @@ public class ORMap{
         this.map = map;
         this.id = id;
     }
-    public ORMapHelper getDotKernel(){
+
+    public ORMapHelper getDotKernel() {
         return this.dotKernel;
     }
-    public DotContext context(){
+
+    public DotContext context() {
         return dotKernel.getContext();
     }
 
-    public String id(){
+    public String id() {
         return id;
     }
 
-    public Map<String, CCounter> map(){
+    public Map<String, CCounter> map() {
         return map;
     }
-    public CCounter value(String id){
+
+    public CCounter value(String id) {
         return this.map.get(id);
     }
 
@@ -82,50 +85,46 @@ public class ORMap{
     }
 
 
-    public ORMap erase(String itemId){
+    public ORMap erase(String itemId) {
         ORMap result = new ORMap(itemId);
-        if(this.map.containsKey(itemId)){
+        if (this.map.containsKey(itemId)) {
             CCounter counter;
             counter = this.map.get(itemId).reset();
-            result.dotKernel.setContext( counter.getContext());
+            result.dotKernel.setContext(counter.getContext());
             this.map.remove(itemId);
             this.dotKernel.remove(itemId);
-            }
+        }
         return result;
     }
 
 
-    public void join(ORMap other){
+    public void join(ORMap other) {
         DotContext immutableContext = this.dotKernel.getContext().deepCopy();
-        for(Map.Entry<String, CCounter> entry : other.map.entrySet()){
+        for (Map.Entry<String, CCounter> entry : other.map.entrySet()) {
             Dot otherDot = other.dotKernel.getDotMap().get(entry.getKey());
             CCounter res = this.map.get(entry.getKey());
-            if(res == null) {
+            if (res == null) {
 
-                if(!this.dotKernel.getContext().containsDot(otherDot)) {
+                if (!this.dotKernel.getContext().containsDot(otherDot)) {
                     this.insertFromOther(entry.getKey(), otherDot);
                     this.map.get(entry.getKey()).join(entry.getValue());
                 }
-            }
-            else{ // object in both
+            } else { // object in both
                 Dot localDot = this.dotKernel.getDotMap().get(entry.getKey());
-                if(otherDot == localDot) { // same object
+                if (otherDot == localDot) { // same object
                     this.map.get(entry.getKey()).join(entry.getValue());
                     this.dotKernel.joinContext(other.dotKernel);
-                }
-                else if (this.dotKernel.getContext().containsDot(otherDot)) {  // local object is newer
+                } else if (this.dotKernel.getContext().containsDot(otherDot)) {  // local object is newer
 
                     // do nothing
-                }
-                else if (other.dotKernel.getContext().containsDot(localDot) ){ // other object is newer
+                } else if (other.dotKernel.getContext().containsDot(localDot)) { // other object is newer
 
-                    this.map.replace(entry.getKey(), new CCounter(this.id,entry.getValue().getDotKernel(), this.dotKernel.getContext()));
+                    this.map.replace(entry.getKey(), new CCounter(this.id, entry.getValue().getDotKernel(), this.dotKernel.getContext()));
                     this.dotKernel.getDotMap().replace(entry.getKey(), otherDot);
-                }
-                else{       // completely different objects
+                } else {       // completely different objects
 
-                    if( this.map.get(entry.getKey()).value() < other.map.get(entry.getKey()).value() ){  // Keep the biggest value
-                        this.map.replace(entry.getKey(), new CCounter(this.id,entry.getValue().getDotKernel(), this.dotKernel.getContext()));
+                    if (this.map.get(entry.getKey()).value() < other.map.get(entry.getKey()).value()) {  // Keep the biggest value
+                        this.map.replace(entry.getKey(), new CCounter(this.id, entry.getValue().getDotKernel(), this.dotKernel.getContext()));
                         this.dotKernel.getDotMap().replace(entry.getKey(), otherDot);
                     }
                 }
@@ -148,7 +147,7 @@ public class ORMap{
         this.dotKernel.getContext().join(other.dotKernel.getContext());
     }
 
-    public List<Pair<String, Integer>> read(){
+    public List<Pair<String, Integer>> read() {
 
         List<Pair<String, Integer>> res = new ArrayList<>();
         for (Map.Entry<String, CCounter> entry : this.map.entrySet()) {
@@ -178,8 +177,7 @@ public class ORMap{
 
         if (counter.value() > value) {
             counter.dec(counter.value() - value);
-        }
-        else if (counter.value() < value) {
+        } else if (counter.value() < value) {
             counter.inc(value - counter.value());
         }
     }
@@ -197,7 +195,7 @@ public class ORMap{
         return mapper.readValue(json, ORMap.class);
     }
 
-    public void printOrMap(){
+    public void printOrMap() {
         System.out.println("ORMap: " + this.id);
         //System.out.println("Context: " + this.context);
         System.out.println("Map: " + this.map);
@@ -206,4 +204,9 @@ public class ORMap{
 
     }
 
+    public boolean isEquivalent(ORMap other) {
+        List otherList = other.read();
+        List thisList = this.read();
+        return Objects.equals(otherList, thisList);
+    }
 }

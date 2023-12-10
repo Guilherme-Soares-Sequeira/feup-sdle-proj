@@ -40,4 +40,14 @@ public class ORMapTest {
 
         Assertions.assertEquals(2, ormap1.get("banana").get());
     }
+
+    @Test
+    public void testEquals(){
+        ORMap ormap1 = new ORMap("a");
+        ORMap ormap2 = new ORMap("b");
+
+        ormap1.put("banana", 1);
+        ormap2.put("banana", 1);
+        Assertions.assertTrue(ormap1.isEquivalent(ormap2));
+    }
 }

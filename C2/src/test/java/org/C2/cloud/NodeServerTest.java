@@ -143,8 +143,6 @@ public class NodeServerTest {
 
         String listID = "something";
 
-        // TODO puts
-
         ConsistentHasher ch = new ConsistentHasher(-1);
 
         var putResult = ServerRequests.putInternalShoppingList(this.serverInfo, listID, sl1, ch);
@@ -157,8 +155,7 @@ public class NodeServerTest {
 
         ORMap receivedList = getResult.get().crdt();
 
-        // TODO: era fixe termos isto... senão não dá para testar este endpoint
-        // Assertions.assertTrue(receivedList.isEquivalent(sl1));
+        Assertions.assertTrue(receivedList.isEquivalent(sl1));
     }
 
     @Test

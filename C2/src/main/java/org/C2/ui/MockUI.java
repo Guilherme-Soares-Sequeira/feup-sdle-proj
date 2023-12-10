@@ -165,6 +165,16 @@ public class MockUI extends JFrame {
                 Optional<ORMap> fetchedList = performFetchReadDataRequest();
 
                 if (fetchedList.isPresent()) {
+                    System.out.println("I got a list from the read request");
+
+                    for (Pair<String, Integer> entry: sl.read()) {
+                        String k = entry.getFirst();
+                        String v = entry.getFirst();
+
+                        System.out.println("k: " + k);
+                        System.out.println("v: " + v);
+                    }
+
                     sl.join(fetchedList.get());
 
                     updateItemList();
@@ -172,7 +182,6 @@ public class MockUI extends JFrame {
 
             }
         });
-
 
         addItemPanel.add(itemNameLabel);
         addItemPanel.add(itemNameField);
@@ -184,9 +193,7 @@ public class MockUI extends JFrame {
     }
 
     private void performWriteRequest(String endpoint) {
-        String list = this.sl.toJson();
-
-        HttpResult<String> result = ServerRequests.requestWrite(LoadBalancer.lbinfo, list, url);
+        HttpResult<String> result = ServerRequests.requestWrite(LoadBalancer.lbinfo, url, this.sl);
 
         if (!result.isOk()) {
             System.err.println(result.errorMessage());

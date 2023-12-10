@@ -1,7 +1,10 @@
 package org.C2.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.gson.JsonPrimitive;
 import okhttp3.*;
 import org.C2.cloud.ConsistentHasher;
 import org.C2.crdts.ORMap;
@@ -185,7 +188,7 @@ public class ServerRequests {
             try {
                 bodyJson = new JSONObject(new JSONTokener(response.body().string()));
             } catch (Exception e) {
-                return HttpResult.err(999, "Couldn't parse body from response: " + e);
+                return HttpResult.err(999, "[getInternalShoppingList] Couldn't parse body from response: " + e);
             }
 
             // Try to get consistent hasher, else do nothing
@@ -318,11 +321,10 @@ public class ServerRequests {
 
     public static HttpResult<Void> putExternalShoppingList(String url, String crdtJson, String forId) {
 
+        JSONObject putJson = new JSONObject();
 
-        JsonObject putJson = new JsonObject();
-
-        putJson.addProperty(JsonKeys.list, crdtJson);
-        putJson.addProperty(JsonKeys.forId, forId);
+        putJson.put(JsonKeys.list, crdtJson);
+        putJson.put(JsonKeys.forId, forId);
 
         RequestBody putBody = RequestBody.create(putJson.toString(), MediaType.parse("application/json"));
 
@@ -347,27 +349,30 @@ public class ServerRequests {
 
     // -------------------------------------- PUT loadbalancer/write/{ID} ----------------------------------------------
     public static HttpResult<String> requestWrite(ServerInfo serverInfo, String listID, ORMap list) {
-        String url = format("/write/{0}", listID);
+        String url = format("http://{0}/write/{1}", serverInfo.fullRepresentation(), listID);
 
         return requestWrite(url, list);
     }
 
     public static HttpResult<String> requestWrite(ServerInfo serverInfo, String listID, String list) {
-        String url = format("/write/{0}", listID);
+        String url = format("http://{0}/write/{1}", serverInfo.fullRepresentation(), listID);
 
         return requestWrite(url, list);
     }
 
     public static HttpResult<String> requestWrite(String url, ORMap list) {
-        String listJson = list.toJson();
+        ObjectMapper objectMapper = new ObjectMapper();
 
-        return requestWrite(url, listJson);
-    }
+        JsonNode putJsonReader;
+        try {
+            putJsonReader = objectMapper.readTree(list.toJson());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
 
-    public static HttpResult<String> requestWrite(String url, String listJson) {
-        JsonObject putJson = new JsonObject();
+        ObjectNode putJson = (ObjectNode) putJsonReader;
+        putJson.put(JsonKeys.list, list.toJson());
 
-        putJson.addProperty(JsonKeys.list, listJson);
         RequestBody putBody = RequestBody.create(putJson.toString(), MediaType.parse("application/json"));
 
         Request putRequest = new Request.Builder().url(url).put(putBody).build();
@@ -385,7 +390,48 @@ public class ServerRequests {
             try {
                 bodyJson = new JSONObject(new JSONTokener(response.body().string()));
             } catch (Exception e) {
-                return HttpResult.err(999, "Couldn't parse body from response: " + e);
+                return HttpResult.err(999, "[requestWrite1] Couldn't parse body from response: " + e);
+            }
+
+            try {
+                String shoppingListJson = bodyJson.getString(JsonKeys.forId);
+
+                return HttpResult.ok(response.code(), shoppingListJson);
+            }
+            // Couldn't parse ConsistentHasher -> error
+            catch (Exception e) {
+                return HttpResult.err(response.code(), format("Could not get forId from json: {0}", e));
+            }
+
+        } catch (Exception e) {
+            return HttpResult.err(999, "Couldn't execute request: " + e);
+        }
+
+
+    }
+
+    public static HttpResult<String> requestWrite(String url, String listJson) {
+        JSONObject putJson = new JSONObject();
+
+        putJson.put(JsonKeys.list, listJson);
+        RequestBody putBody = RequestBody.create(putJson.toString(), MediaType.parse("application/json"));
+
+        Request putRequest = new Request.Builder().url(url).put(putBody).build();
+
+        try (Response response = client.newCall(putRequest).execute()) {
+            if (response.body() == null) {
+                return HttpResult.err(response.code(), "Request body is null.");
+            }
+
+            if (response.code() != 202) {
+                return httpErrorFromResponse(response);
+            }
+
+            JSONObject bodyJson;
+            try {
+                bodyJson = new JSONObject(new JSONTokener(response.body().string()));
+            } catch (Exception e) {
+                return HttpResult.err(999, "[requestWrite2] Couldn't parse body from response: " + e);
             }
 
             try {
@@ -405,7 +451,7 @@ public class ServerRequests {
 
     // --------------------------------------- GET loadbalancer/read/{ID} ----------------------------------------------
     public static HttpResult<String> requestRead(ServerInfo serverInfo, String listID) {
-        String url = format("/read/{0}", listID);
+        String url = format("http://{0}/read/{1}", serverInfo.fullRepresentation() ,listID);
 
         return requestRead(url);
     }
@@ -427,7 +473,7 @@ public class ServerRequests {
             try {
                 bodyJson = new JSONObject(new JSONTokener(response.body().string()));
             } catch (Exception e) {
-                return HttpResult.err(999, "Couldn't parse body from response: " + e);
+                return HttpResult.err(999, "[requestRead] Couldn't parse body from response: " + e);
             }
 
             try {
@@ -448,7 +494,7 @@ public class ServerRequests {
     // --------------------------------------- GET loadbalancer/client/poll/{forID} ---------------------------------------
 
     public static HttpResult<RequestStatus> pollRequest(ServerInfo serverInfo, String forId) {
-        String url = format("/client/poll/{0}", forId);
+        String url = format("http://{0}/client/poll/{1}", serverInfo.fullRepresentation(), forId);
 
         return pollRequest(url);
     }
@@ -467,9 +513,10 @@ public class ServerRequests {
 
             JSONObject bodyJson;
             try {
-                bodyJson = new JSONObject(new JSONTokener(response.body().string()));
+                String bodyJsonString = response.body().string();
+                bodyJson = new JSONObject(new JSONTokener(bodyJsonString));
             } catch (Exception e) {
-                return HttpResult.err(999, "Couldn't parse body from response: " + e);
+                return HttpResult.err(999, "[pollRequest] Couldn't parse body from response: " + e);
             }
 
             String statusString;
@@ -489,7 +536,7 @@ public class ServerRequests {
     // ---------------------------------- GET loadbalancer/client/read/{forID} --------------------------------------------
 
     public static HttpResult<FetchListInfo> fetchList(ServerInfo serverInfo, String forId) {
-        String url = format("/client/read/{0}", forId);
+        String url = format("http://{0}/client/read/{1}", serverInfo.fullRepresentation(), forId);
 
         return fetchList(url);
     }
@@ -510,7 +557,7 @@ public class ServerRequests {
             try {
                 bodyJson = new JSONObject(new JSONTokener(response.body().string()));
             } catch (Exception e) {
-                return HttpResult.err(999, "Couldn't parse body from response: " + e);
+                return HttpResult.err(999, "[fetchList] Couldn't parse body from response: " + e);
             }
 
             RequestStatus status;

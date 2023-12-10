@@ -187,7 +187,19 @@ public class ORMap {
     }
 
     public static ORMap fromJson(String json) throws JsonProcessingException {
+        if (json.charAt(0) == '"') {
+            json = json.substring(1);
+        }
+        if (json.charAt(json.length()-1) == '"') {
+            json = json.substring(0, json.length()-1);
+        }
+
+        json=json.replaceAll("\\\\", "");
+
+        System.out.println("passed json: " + json);
+
         ObjectMapper mapper = new ObjectMapper();
+
         return mapper.readValue(json, ORMap.class);
     }
 

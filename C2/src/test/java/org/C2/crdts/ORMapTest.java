@@ -1,5 +1,6 @@
 package org.C2.crdts;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -172,6 +173,17 @@ public class ORMapTest {
         ormap4.join(ormap2);
         ormap4.join(ormap1);
         Assertions.assertTrue(ormap3.isEquivalent(ormap4));
+    }
+
+    @Test
+    public void serializeJsonTest() {
+        String crdt = "{\"replicaID\":\"a\",\"map\":{\"banana\":{\"dotKernel\":{\"dotmap\":[{\"sequenceNumber\":2,\"replicaID\":\"a\",\"dotValue\":3}],\"context\":{\"causalContext\":{\"a\":2},\"dotCloud\":[]}},\"id\":\"a\"}},\"mapKernel\":{\"helperDotMap\":[{\"sequenceNumber\":1,\"replicaID\":\"a\",\"objectName\":\"banana\"}],\"helperContext\":{\"causalContext\":{\"a\":1},\"dotCloud\":[]}}}";
+
+        try {
+            ORMap ormap = ORMap.fromJson(crdt);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

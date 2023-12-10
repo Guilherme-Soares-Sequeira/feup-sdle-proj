@@ -116,7 +116,7 @@ public class LoadBalancer extends BaseServer {
         requestStatusMap.put(forID, status);
 
         res.status(200);
-        return "";
+        return response.toString();
     }
 
     private String nodeRequestRead(Request req, Response res){
@@ -190,7 +190,7 @@ public class LoadBalancer extends BaseServer {
         requestedLists.put(forID, list);
 
         res.status(200);
-        return "";
+        return response.toString();
     }
 
     private String clientRequestPoll(Request req, Response res) {
@@ -214,7 +214,7 @@ public class LoadBalancer extends BaseServer {
         response.put(JsonKeys.status, status.toString());
 
         res.status(200);
-        return "";
+        return response.toString();
     }
 
     public String clientRequestRead(Request req, Response res) {

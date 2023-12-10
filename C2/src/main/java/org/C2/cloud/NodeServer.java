@@ -425,8 +425,7 @@ public class NodeServer extends BaseServer {
 
         // Check criteria for READ fail
         if (responseList.size() < ConsistentHashingParameters.R) {
-            // TODO: Send a womp womp to load balancer
-            this.logWarning(endpoint, "[SIMULATION] READ FAIL: responses = " + responseList.size());
+
             return;
         }
 
@@ -536,6 +535,7 @@ public class NodeServer extends BaseServer {
             listToPut = ORMap.fromJson(listJson);
 
         } catch (Exception ignored) {
+            logError(endpoint, listJson);
             final String errorString = "Failed to parse CRDT from JSON.";
 
             this.logError(endpoint, errorString);
@@ -544,7 +544,6 @@ public class NodeServer extends BaseServer {
             res.status(400);
             return response.toString();
         }
-
 
         var priorityList = this.ring.getServers(listID, ConsistentHashingParameters.PriorityListLength);
         priorityList = this.getHealthyServers(priorityList, ConsistentHashingParameters.N);

@@ -11,6 +11,11 @@ import org.junit.jupiter.api.*;
 import okhttp3.MediaType;
 import spark.utils.Assert;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import static java.text.MessageFormat.format;
 import static spark.Spark.*;
 
@@ -27,13 +32,17 @@ public class NodeServerTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    public void tearDown() throws Exception {
         stop();
 
-        
+        String dir = "kvstore";
+
+        Files.walk(Paths.get(dir))
+                .map(Path::toFile)
+                .forEach(File::delete);
 
         try {
-            Thread.sleep(50);
+            Thread.sleep(100);
         } catch (Exception e) {
             System.out.println("THREAD SLEEP WAS CANCELED");
         }

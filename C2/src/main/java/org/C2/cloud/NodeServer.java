@@ -330,7 +330,9 @@ public class NodeServer extends BaseServer {
 
     private String getExternalShoppingList(Request req, Response res) {
         final JSONObject response = new JSONObject();
-        final String endpoint = "GET /external/shopping-list/{ID}";
+        final String endpoint = "GET /external/shopping-list/{ID}/{forId}";
+
+        this.logWarning(endpoint, "I am responsible for a READ operation.");
 
         // Get id
         String listID = req.params(":id");
@@ -346,7 +348,7 @@ public class NodeServer extends BaseServer {
         }
 
         // Get for
-        String forID = req.attribute("for");
+        String forID = req.params(":forId");
 
         if (forID == null) {
             final String errorString = "Could not get for from request";

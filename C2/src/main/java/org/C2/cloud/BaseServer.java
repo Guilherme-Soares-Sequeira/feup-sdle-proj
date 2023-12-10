@@ -81,10 +81,10 @@ public abstract class BaseServer implements SparkApplication {
     }
 
     protected void logWarning(String endpoint, String message) {
-        System.out.println(format("[WARNING] {0}: {1}", endpoint, message));
+        System.out.println(format("[WARNING] {0} {1}: {2}", this.serverInfo.fullRepresentation(), endpoint, message));
     }
 
     protected void logError(String endpoint, String message) {
-        System.err.println(format("[ERROR] {0}: {1}", endpoint, message));
+        System.err.println(format("[ERROR] {0} {1}: {2}", this.serverInfo.fullRepresentation(), endpoint, message));
     }
 }

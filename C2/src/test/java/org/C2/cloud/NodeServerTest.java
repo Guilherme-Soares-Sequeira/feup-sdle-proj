@@ -1,5 +1,6 @@
 package org.C2.cloud;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -16,32 +17,41 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.text.MessageFormat.format;
 import static spark.Spark.*;
 
 public class NodeServerTest {
     private NodeServer server;
-    private NodeServer server2;
     ServerInfo serverInfo;
 
+    private static final Integer numVnodes = 3;
+
+    public List<NodeServer> instantiateSeeds() {
+        List<NodeServer> seeds = new ArrayList<>();
+        for (ServerInfo seedInfo : SeedServers.SEEDS_INFO) {
+            NodeServer seedServer = new NodeServer(seedInfo.identifier(), seedInfo.port(), true, SeedServers.NUM_VIRTUAL_NODES);
+            seeds.add(seedServer);
+        }
+
+        return seeds;
+    }
 
     @BeforeEach
     public void setup() {
         this.serverInfo = new ServerInfo("localhost", 4444);
 
-        this.server = new NodeServer(serverInfo.identifier(), serverInfo.port(), false, 3);
+        this.server = new NodeServer(serverInfo.identifier(), serverInfo.port(), false, numVnodes);
         this.server.init();
-
-        this.server2 = new NodeServer("localhost", 4445, false, 2);
-        this.server2.init();
 
     }
 
     @AfterEach
     public void tearDown() throws Exception {
         this.server.stop();
-        this.server2.stop();
 
         String dir = "kvstore";
 
@@ -146,6 +156,212 @@ public class NodeServerTest {
         MockCRDT receivedList = getResult.get().crdt();
 
         Assertions.assertTrue(receivedList.isEquivalent(sl1));
+    }
+
+    @Test
+    public void externalShoppingList() {
+        var seeds = instantiateSeeds();
+
+        seeds.forEach(NodeServer::init);
+
+        try {
+            Thread.sleep(500);
+        } catch (Exception e ) {
+            System.out.println("sleep was stopped");
+        }
+
+        ConsistentHasher updated = new ConsistentHasher(Instant.now().getEpochSecond() + 2);
+
+        for (ServerInfo seed : SeedServers.SEEDS_INFO) {
+            updated.addServer(seed, SeedServers.NUM_VIRTUAL_NODES);
+        }
+
+        updated.addServer(this.serverInfo, numVnodes);
+
+        for (ServerInfo seed : SeedServers.SEEDS_INFO) {
+            var result = ServerRequests.putExternalRing(seed, updated);
+
+            Assertions.assertTrue(result.isOk());
+        }
+
+        var ringResult = ServerRequests.putExternalRing(this.serverInfo, updated);
+        Assertions.assertTrue(ringResult.isOk());
+
+
+        MockCRDT sl = new MockCRDT();
+        sl.put("banana", 3);
+        sl.put("apple", 5);
+
+        String listID = "testexternal";
+
+        String forID = "cloudcart";
+
+        var putResult = ServerRequests.putExternalShoppingList(this.serverInfo, listID, sl, forID);
+
+        System.out.println("Code returned = " + putResult.code());
+        Assertions.assertTrue(putResult.isOk());
+
+        try {
+            Thread.sleep(2000);
+        } catch (Exception e) {
+            System.out.println("Sleep was interrupted");
+        }
+
+        var readResult = ServerRequests.getExternalShoppingList(this.serverInfo, listID, "cloudcart2");
+
+        Assertions.assertTrue(readResult.isOk());
+
+        try {
+            Thread.sleep(2000);
+        } catch (Exception e) {
+            System.out.println("Sleep was interrupted");
+        }
+
+        seeds.forEach(NodeServer::stop);
+    }
+
+    @Test
+    public void nodeInPriorityListIsDown() {
+        var seeds = instantiateSeeds();
+
+        seeds.forEach(NodeServer::init);
+
+        try {
+            Thread.sleep(500);
+        } catch (Exception e ) {
+            System.out.println("sleep was stopped");
+        }
+
+        ConsistentHasher updated = new ConsistentHasher(Instant.now().getEpochSecond() + 2);
+
+        for (ServerInfo seed : SeedServers.SEEDS_INFO) {
+            updated.addServer(seed, SeedServers.NUM_VIRTUAL_NODES);
+        }
+
+        updated.addServer(this.serverInfo, numVnodes);
+
+        for (ServerInfo seed : SeedServers.SEEDS_INFO) {
+            var result = ServerRequests.putExternalRing(seed, updated);
+
+            Assertions.assertTrue(result.isOk());
+        }
+
+        var ringResult = ServerRequests.putExternalRing(this.serverInfo, updated);
+        Assertions.assertTrue(ringResult.isOk());
+
+        seeds.get(0).stop();
+
+        try {
+            Thread.sleep(2000);
+        } catch (Exception e) {
+            System.out.println("Sleep was interrupted");
+        }
+
+        MockCRDT sl = new MockCRDT();
+        sl.put("banana", 3);
+        sl.put("apple", 5);
+
+        String listID = "testexternalfail";
+
+        String forID = "cloudcart3";
+
+        var putResult = ServerRequests.putExternalShoppingList(this.serverInfo, listID, sl, forID);
+
+        System.out.println("Code returned = " + putResult.code());
+        Assertions.assertTrue(putResult.isOk());
+
+        try {
+            Thread.sleep(2000);
+        } catch (Exception e) {
+            System.out.println("Sleep was interrupted");
+        }
+
+        var readResult = ServerRequests.getExternalShoppingList(this.serverInfo, listID, "cloudcart4");
+
+        Assertions.assertTrue(readResult.isOk());
+
+        try {
+            Thread.sleep(2000);
+        } catch (Exception e) {
+            System.out.println("Sleep was interrupted");
+        }
+
+        for (int i = 1; i < seeds.size(); i++) {
+            seeds.get(i).stop();
+        }
+    }
+
+    @Test
+    public void onlyOneUp() {
+        var seeds = instantiateSeeds();
+
+        seeds.forEach(NodeServer::init);
+
+        try {
+            Thread.sleep(500);
+        } catch (Exception e ) {
+            System.out.println("sleep was stopped");
+        }
+
+        ConsistentHasher updated = new ConsistentHasher(Instant.now().getEpochSecond() + 2);
+
+        for (ServerInfo seed : SeedServers.SEEDS_INFO) {
+            updated.addServer(seed, SeedServers.NUM_VIRTUAL_NODES);
+        }
+
+        updated.addServer(this.serverInfo, numVnodes);
+
+        for (ServerInfo seed : SeedServers.SEEDS_INFO) {
+            var result = ServerRequests.putExternalRing(seed, updated);
+
+            Assertions.assertTrue(result.isOk());
+        }
+
+        var ringResult = ServerRequests.putExternalRing(this.serverInfo, updated);
+        Assertions.assertTrue(ringResult.isOk());
+
+        seeds.get(0).stop();
+        seeds.get(1).stop();
+        seeds.get(2).stop();
+
+        try {
+            Thread.sleep(3000);
+        } catch (Exception e) {
+            System.out.println("Sleep was interrupted");
+        }
+
+        MockCRDT sl = new MockCRDT();
+        sl.put("banana", 3);
+        sl.put("apple", 5);
+
+        String listID = "testOnlyOneUp";
+
+        String forID = "cloudcart3";
+
+        var putResult = ServerRequests.putExternalShoppingList(this.serverInfo, listID, sl, forID);
+
+        System.out.println("Code returned = " + putResult.code());
+        Assertions.assertTrue(putResult.isOk());
+
+        try {
+            Thread.sleep(2000);
+        } catch (Exception e) {
+            System.out.println("Sleep was interrupted");
+        }
+
+        var readResult = ServerRequests.getExternalShoppingList(this.serverInfo, listID, "cloudcart4");
+
+        Assertions.assertTrue(readResult.isOk());
+
+        try {
+            Thread.sleep(2000);
+        } catch (Exception e) {
+            System.out.println("Sleep was interrupted");
+        }
+
+        for (int i = 3; i < seeds.size(); i++) {
+            seeds.get(i).stop();
+        }
     }
 
 }

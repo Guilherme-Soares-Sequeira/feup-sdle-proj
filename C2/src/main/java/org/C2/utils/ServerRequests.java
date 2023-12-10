@@ -323,7 +323,7 @@ public class ServerRequests {
         Request putRequest = new Request.Builder().url(url).put(putBody).build();
 
         try (Response response = client.newCall(putRequest).execute()) {
-            if (response.code() != 201) {
+            if (response.code() != 202) {
                 return httpErrorFromResponse(response);
             }
 

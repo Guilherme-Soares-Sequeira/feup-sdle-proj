@@ -8,7 +8,8 @@ public record SeedServers() {
     public static final List<ServerInfo> SEEDS_INFO = List.of(
             new ServerInfo("localhost", 3883),
             new ServerInfo("localhost", 3884),
-            new ServerInfo("localhost", 3885)
+            new ServerInfo("localhost", 3885),
+            new ServerInfo("localhost", 3886)
     );
 
     public static final int NUM_VIRTUAL_NODES = 2;

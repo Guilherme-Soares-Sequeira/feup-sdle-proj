@@ -90,9 +90,7 @@ public class KVStore {
 
             return Optional.of(content.toString());
         } catch (IOException | JSONException e) {
-            if (this.logging) {
-                this.logger.log(Level.SEVERE, "Error while reading file: " + filepath, e);
-            }
+            //if (this.logging) {this.logger.log(Level.SEVERE, "Error while reading file: " + filepath, e);}
 
             return Optional.empty();
         }

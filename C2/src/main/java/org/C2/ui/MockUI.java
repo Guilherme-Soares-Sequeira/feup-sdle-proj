@@ -74,8 +74,6 @@ public class MockUI extends JFrame {
 
         submitUsername.addActionListener(e -> {
             this.username = usernameTextField.getText();
-            
-            this.sl = new ORMap(this.username);
 
             this.kvstore = new KVStore("users/" + this.username, true);
 
@@ -137,6 +135,9 @@ public class MockUI extends JFrame {
             String inputURL = urlTextField.getText();
             this.url = inputURL;
 
+            // Submit
+            this.sl = new ORMap(this.username);
+
             fetchListFromCloud();
 
             try {
@@ -149,7 +150,7 @@ public class MockUI extends JFrame {
         createShoppingListButton.addActionListener(e -> {
             this.url = UUID.randomUUID().toString();
 
-            ORMap empty = new ORMap(this.url);
+            ORMap empty = new ORMap(this.username);
 
             String emptyList = empty.toJson();
 
@@ -252,9 +253,7 @@ public class MockUI extends JFrame {
     }
 
     private void fetchListFromCloud() {
-        System.out.println("Pull button was called.");
         if (!performReadRequest()) {
-            System.out.println("performReadRequest() failed");
             return;
         }
 
@@ -262,30 +261,21 @@ public class MockUI extends JFrame {
 
         Optional<RequestStatus> pollStatus;
         try {
-            System.out.println("Im in the poll status");
             pollStatus = future.get(4000, TimeUnit.MILLISECONDS);
         } catch ( InterruptedException | java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException ex) {
-            System.out.println("Catched exception: " + ex);
             future.cancel(true);
             return;
         }
 
-        System.out.println("Hello 1");
-
         if (pollStatus.isEmpty() || !pollStatus.get().equals(RequestStatus.DONE)) {
-            System.out.println("Displaying response time out message");
             displayTemporaryMessage(addItemPanel, "Response timeout", 3);
 
             return;
         }
 
-        System.out.println("Hello 2");
-
         Optional<ORMap> fetchedList = performFetchReadDataRequest();
 
         if (fetchedList.isPresent()) {
-            System.out.println("I got a list from the read request");
-
             for (Pair<String, Integer> entry: fetchedList.get().read()) {
                 String k = entry.getFirst();
                 int v = entry.getSecond();
@@ -296,29 +286,18 @@ public class MockUI extends JFrame {
 
             sl.join(fetchedList.get());
 
-            System.out.println("After joining the received CRDT:");
-
             for (Pair<String, Integer> entry: sl.read()) {
                 String k = entry.getFirst();
                 int v = entry.getSecond();
-
-                System.out.println("merged k: " + k);
-                System.out.println("merged v: " + v);
             }
 
             updateItemList();
         }
     }
     private void performWriteRequest(String endpoint) {
-        System.out.println("[UI] - You have clicked the PUSH button");
-
-        System.out.println("url: " + this.url);
-
         for (Pair<String, Integer> entry: this.sl.read()) {
             String k = entry.getFirst();
             int v = entry.getSecond();
-
-            System.out.println("[UI] - item: " + k + " | quantity: " + v);
         }
 
         HttpResult<String> result = ServerRequests.requestWrite(LoadBalancer.lbinfo, url, this.sl);

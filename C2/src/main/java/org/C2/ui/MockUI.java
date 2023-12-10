@@ -138,6 +138,12 @@ public class MockUI extends JFrame {
             this.url = inputURL;
 
             fetchListFromCloud();
+
+            try {
+                this.showShoppingList(this.sl.toJson());
+            } catch (JsonProcessingException ex) {
+                throw new RuntimeException(ex);
+            }
         });
 
         createShoppingListButton.addActionListener(e -> {

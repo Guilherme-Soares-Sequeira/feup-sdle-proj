@@ -52,58 +52,19 @@ public class LoadBalancer extends BaseServer {
     protected void defineRoutes() {
         this.http.get("/read/:id", this::read);
         this.http.put("/write/:id", this::write);
-        this.http.put("/nodes/read/", this::nodeRequestRead);
-        this.http.put("/nodes/write/", this::nodeRequestWrite);
+        this.http.put("/nodes/read/:forId", this::nodeRequestRead);
+        this.http.put("/nodes/write/:forId", this::nodeRequestWrite);
         this.http.get("/client/poll/:id", this::clientRequestPoll);
         this.http.get("/client/read/:id", this::clientRequestRead);
     }
 
     private String nodeRequestWrite(Request req, Response res) {
         final JSONObject response = new JSONObject();
-        final String endpoint = "PUT /nodes/write/";
+        final String endpoint = "PUT /nodes/write/{forId}";
 
-        JSONObject bodyJson;
+        String forID = req.params(":forId");
 
-        try{
-            bodyJson = new JSONObject(new JSONTokener(req.body()));
-        } catch (Exception e) {
-            final String errorString = "Could not parse body as JSON";
-
-            this.logError(endpoint, errorString);
-            res.status(400);
-            response.put(JsonKeys.errorMessage, errorString);
-
-            return response.toString();
-        }
-
-        String forID;
-        try {
-            forID = bodyJson.getString(JsonKeys.forId);
-        } catch (Exception e) {
-            final String errorString = "Could not get forID from request";
-
-            this.logError(endpoint, errorString);
-            res.status(400);
-            response.put(JsonKeys.errorMessage, errorString);
-
-            return response.toString();
-        }
-
-        RequestStatus status;
-        try {
-            status = this.requestStatusMap.get(forID);
-        } catch (Exception e) {
-            final String errorString = "Could not get status from request";
-
-            this.logError(endpoint, errorString);
-            res.status(400);
-            response.put(JsonKeys.errorMessage, errorString);
-
-            return response.toString();
-        }
-
-
-        if (forID == null || status == null) {
+        if (forID == null) {
             final String errorString = "Incomplete node request parameters";
 
             this.logError(endpoint, errorString);
@@ -113,15 +74,78 @@ public class LoadBalancer extends BaseServer {
             return response.toString();
         }
 
-        requestStatusMap.put(forID, status);
+        JSONObject bodyJson;
+
+        try {
+            bodyJson = new JSONObject(new JSONTokener(req.body()));
+        } catch (Exception e) {
+            final String errorString = "Could not parse body as JSON";
+
+            this.logError(endpoint, errorString);
+            res.status(400);
+            response.put(JsonKeys.errorMessage, errorString);
+
+            this.requestStatusMap.put(forID, RequestStatus.ERROR);
+
+            return response.toString();
+        }
+
+        boolean error;
+        try {
+            error = bodyJson.getBoolean(JsonKeys.error);
+        } catch (Exception e) {
+            final String errorString = "Could not get error flag from request";
+
+            this.logError(endpoint, errorString);
+            res.status(400);
+            response.put(JsonKeys.errorMessage, errorString);
+            this.requestStatusMap.put(forID, RequestStatus.ERROR);
+
+            return response.toString();
+        }
+
+        if (error) {
+            this.logError(endpoint, "Got ERROR from server, therefore updating request status to ERROR.");
+            this.requestStatusMap.put(forID, RequestStatus.ERROR);
+
+            res.status(200);
+            return "";
+        }
+
+
+        try {
+            RequestStatus status = this.requestStatusMap.get(forID);
+        } catch (Exception e) {
+            final String errorString = "forId not found!";
+
+            this.logError(endpoint, errorString);
+            res.status(404);
+            response.put(JsonKeys.errorMessage, errorString);
+
+            return response.toString();
+        }
+
+        requestStatusMap.put(forID, RequestStatus.DONE);
 
         res.status(200);
-        return response.toString();
+        return "";
     }
 
     private String nodeRequestRead(Request req, Response res){
         final JSONObject response = new JSONObject();
-        final String endpoint = "PUT /nodes/read/";
+        final String endpoint = "PUT /nodes/read/{forId}";
+
+        String forID = req.params(":forId");
+
+        if (forID == null) {
+            final String errorString = "forId not found!";
+
+            this.logError(endpoint, errorString);
+            res.status(404);
+            response.put(JsonKeys.errorMessage, errorString);
+
+            return response.toString();
+        }
 
         JSONObject bodyJson;
 
@@ -134,33 +158,31 @@ public class LoadBalancer extends BaseServer {
             res.status(400);
             response.put(JsonKeys.errorMessage, errorString);
 
-            return response.toString();
-        }
-
-        String forID;
-        try {
-            forID = bodyJson.getString(JsonKeys.forId);
-        } catch (Exception e) {
-            final String errorString = "Could not get forID from request";
-
-            this.logError(endpoint, errorString);
-            res.status(400);
-            response.put(JsonKeys.errorMessage, errorString);
+            this.requestStatusMap.put(forID, RequestStatus.ERROR);
 
             return response.toString();
         }
 
-        RequestStatus status;
+        boolean error;
         try {
-            status = this.requestStatusMap.get(forID);
+            error = bodyJson.getBoolean(JsonKeys.error);
         } catch (Exception e) {
-            final String errorString = "Could not get status from request";
+            final String errorString = "Could not get error flag from request";
 
             this.logError(endpoint, errorString);
             res.status(400);
             response.put(JsonKeys.errorMessage, errorString);
+            this.requestStatusMap.put(forID, RequestStatus.ERROR);
 
             return response.toString();
+        }
+
+        if (error) {
+            this.logError(endpoint, "Got ERROR from server, therefore updating request status to ERROR.");
+            this.requestStatusMap.put(forID, RequestStatus.ERROR);
+
+            res.status(200);
+            return "";
         }
 
         String list;
@@ -172,25 +194,40 @@ public class LoadBalancer extends BaseServer {
             this.logError(endpoint, errorString);
             res.status(400);
             response.put(JsonKeys.errorMessage, errorString);
+            this.requestStatusMap.put(forID, RequestStatus.ERROR);
 
             return response.toString();
         }
 
-        if (forID == null || status == null || list == null) {
-            final String errorString = "Incomplete node request parameters";
+        RequestStatus status;
+        try {
+            status = this.requestStatusMap.get(forID);
+        } catch (Exception e) {
+            final String errorString = "forId not found!";
 
             this.logError(endpoint, errorString);
-            res.status(400);
+            res.status(404);
             response.put(JsonKeys.errorMessage, errorString);
 
             return response.toString();
         }
 
-        requestStatusMap.put(forID, status);
+        if (status == null || list == null) {
+            final String errorString = "Incomplete node request parameters";
+
+            this.logError(endpoint, errorString);
+            res.status(400);
+            response.put(JsonKeys.errorMessage, errorString);
+            this.requestStatusMap.put(forID, RequestStatus.ERROR);
+
+            return response.toString();
+        }
+
+        requestStatusMap.put(forID, RequestStatus.DONE);
         requestedLists.put(forID, list);
 
         res.status(200);
-        return response.toString();
+        return "";
     }
 
     private String clientRequestPoll(Request req, Response res) {
@@ -209,7 +246,15 @@ public class LoadBalancer extends BaseServer {
             return response.toString();
         }
 
-        RequestStatus status = requestStatusMap.getOrDefault(forID, RequestStatus.ERROR);
+        RequestStatus status = requestStatusMap.get(forID);
+
+        if (status == null) {
+            this.logWarning(endpoint, "Tried to poll request, but forId not found: " + forID);
+            response.put(JsonKeys.errorMessage, "Could not find that poll!");
+            res.status(404);
+
+            return response.toString();
+        }
 
         response.put(JsonKeys.status, status.toString());
 
@@ -363,7 +408,6 @@ public class LoadBalancer extends BaseServer {
 
     private String generateRandomId() {
         UUID uuid = UUID.randomUUID();
-
         return uuid.toString();
     }
 

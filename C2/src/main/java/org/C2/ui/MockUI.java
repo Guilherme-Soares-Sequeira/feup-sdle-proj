@@ -20,6 +20,7 @@ import java.net.URL;
 import java.sql.SQLOutput;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -31,19 +32,25 @@ public class MockUI extends JFrame {
     private String url;
     private String forID;
     private ORMap sl;
+    private JPanel addItemPanel;
     private JPanel itemListPanel;
+
+    // TODO 1: add a 'SAVE' button which stores the current version of the shopping list locally (maybe done)
+    // TODO 2: add a 'CREATE LIST' button which instantiates a new shopping list (maybe done)
+    // TODO 3: add a log message for when the polling for a PULL request is happening (maybe done)
+    // TODO 4: add a log message for errors (PUSH/PULL fails) (maybe done)
 
     public MockUI() {
         this.kvstore = new KVStore("users", true);
 
         this.loadUI();
 
-        this.width = 800;
-        this.height = 500;
+        this.width = 1280;
+        this.height = 720;
 
         super.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         super.setTitle("Shopping List");
-        super.setSize(500, 500);
+        super.setSize(1500, 1000);
         super.setLocationRelativeTo(null);
         super.setVisible(true);
     }
@@ -52,7 +59,9 @@ public class MockUI extends JFrame {
         JPanel panel = new JPanel();
         JLabel label = new JLabel("Enter shopping list URL: ");
         JButton button = new JButton("Submit");
-        JTextField urlTextField = new JTextField(20);
+        JButton createShoppingListButton = new JButton("New Shopping List");
+
+        JTextField urlTextField = new JTextField(36);
 
         this.itemListPanel = new JPanel();
         this.itemListPanel.setLayout(new BoxLayout(this.itemListPanel, BoxLayout.Y_AXIS));
@@ -77,9 +86,26 @@ public class MockUI extends JFrame {
 
         });
 
+        createShoppingListButton.addActionListener(e -> {
+            this.url = UUID.randomUUID().toString();
+
+            ORMap empty = new ORMap(this.url);
+
+            String emptyList = empty.toJson();
+
+            try {
+                showShoppingList(emptyList);
+                
+                super.dispose();
+            } catch (JsonProcessingException ex) {
+                System.err.println("Could not display the created shopping list: " + ex);
+            }
+        });
+
         panel.add(label);
         panel.add(urlTextField);
         panel.add(button);
+        panel.add(createShoppingListButton);
 
         super.add(panel);
     }
@@ -89,7 +115,7 @@ public class MockUI extends JFrame {
 
         this.updateItemList();
 
-        JFrame frame = new JFrame("Shopping List Content");
+        JFrame frame = new JFrame(this.url);
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(this.width, this.height);
@@ -102,16 +128,18 @@ public class MockUI extends JFrame {
         JScrollPane scrollPane = new JScrollPane(this.itemListPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
+        this.addItemPanel.add(new JLabel("URL = " + this.url));
+
         container.add(scrollPane, BorderLayout.CENTER);
 
         frame.setVisible(true);
     }
 
     private JPanel createAddItemPanel() {
-        JPanel addItemPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        this.addItemPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         addItemPanel.setBackground(Color.LIGHT_GRAY);
 
-        JTextField itemNameField = new JTextField(20);
+        JTextField itemNameField = new JTextField(36);
         itemNameField.setFont(new Font("Arial", Font.BOLD, 14));
 
         JLabel itemNameLabel = new JLabel("Item name: ");
@@ -120,6 +148,7 @@ public class MockUI extends JFrame {
         JButton addItemButton = this.createButton("ADD", Font.MONOSPACED);
         JButton pullButton = this.createButton("PULL", Font.MONOSPACED);
         JButton pushButton = this.createButton("PUSH", Font.MONOSPACED);
+        JButton saveButton = this.createButton("SAVE", Font.MONOSPACED);
 
         addItemButton.setIcon(new ImageIcon(this.loadIcon(UIConstants.ICON_ADD_PATH)));
         pullButton.setIcon(new ImageIcon(this.loadIcon(UIConstants.ICON_PULL_PATH)));
@@ -138,7 +167,9 @@ public class MockUI extends JFrame {
         pullButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                System.out.println("Pull button was called.");
                 if (!performReadRequest()) {
+                    System.out.println("performReadRequest() failed");
                     return;
                 }
 
@@ -146,30 +177,33 @@ public class MockUI extends JFrame {
 
                 Optional<RequestStatus> pollStatus;
                 try {
+                    System.out.println("Im in the poll status");
                     pollStatus = future.get(4000, TimeUnit.MILLISECONDS);
-                } catch (Exception ex) {
-                    // request timed out or was interrupted
-
-                    // TODO: add a message in the UI
+                } catch ( InterruptedException | java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException ex) {
+                    System.out.println("Catched exception: " + ex);
+                    future.cancel(true);
                     return;
                 }
+
+                System.out.println("Hello 1");
 
                 if (pollStatus.isEmpty() || !pollStatus.get().equals(RequestStatus.DONE)) {
-                    // response wasn't ready in time
-
-                    // TODO: add a message in the UI
+                    System.out.println("Displaying response time out message");
+                    displayTemporaryMessage(addItemPanel, "Response timeout", 3);
 
                     return;
                 }
+
+                System.out.println("Hello 2");
 
                 Optional<ORMap> fetchedList = performFetchReadDataRequest();
 
                 if (fetchedList.isPresent()) {
                     System.out.println("I got a list from the read request");
 
-                    for (Pair<String, Integer> entry: sl.read()) {
+                    for (Pair<String, Integer> entry: fetchedList.get().read()) {
                         String k = entry.getFirst();
-                        String v = entry.getFirst();
+                        int v = entry.getSecond();
 
                         System.out.println("k: " + k);
                         System.out.println("v: " + v);
@@ -177,9 +211,26 @@ public class MockUI extends JFrame {
 
                     sl.join(fetchedList.get());
 
+                    System.out.println("After joining the received CRDT:");
+
+                    for (Pair<String, Integer> entry: sl.read()) {
+                        String k = entry.getFirst();
+                        int v = entry.getSecond();
+
+                        System.out.println("merged k: " + k);
+                        System.out.println("merged v: " + v);
+                    }
+
                     updateItemList();
                 }
 
+            }
+        });
+
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                kvstore.put(url, sl.toJson());
             }
         });
 
@@ -188,14 +239,25 @@ public class MockUI extends JFrame {
         addItemPanel.add(addItemButton);
         addItemPanel.add(pullButton);
         addItemPanel.add(pushButton);
+        addItemPanel.add(saveButton);
 
         return addItemPanel;
     }
 
     private void performWriteRequest(String endpoint) {
+        System.out.println("[UI] - You have clicked the PUSH button");
+
+        for (Pair<String, Integer> entry: this.sl.read()) {
+            String k = entry.getFirst();
+            int v = entry.getSecond();
+
+            System.out.println("[UI] - item: " + k + " | quantity: " + v);
+        }
+
         HttpResult<String> result = ServerRequests.requestWrite(LoadBalancer.lbinfo, url, this.sl);
 
         if (!result.isOk()) {
+            displayTemporaryMessage(this.addItemPanel, "Write timeout", 3);
             System.err.println(result.errorMessage());
         } else {
             this.forID = result.get();
@@ -205,20 +267,38 @@ public class MockUI extends JFrame {
     private boolean performReadRequest() {
         HttpResult<String> result = ServerRequests.requestRead(LoadBalancer.lbinfo, this.url);
 
-        this.forID = forID;
+        this.forID = result.get();
 
         return result.isOk();
     }
 
     private Optional<RequestStatus> performPollRequest() {
-        HttpResult<RequestStatus> result = ServerRequests.pollRequest(LoadBalancer.lbinfo, this.forID);
+        while (!Thread.currentThread().isInterrupted()) {
+            HttpResult<RequestStatus> result = ServerRequests.pollRequest(LoadBalancer.lbinfo, this.forID);
 
-        if (!result.isOk()) {
-            System.err.println(result.errorMessage());
-            return Optional.empty();
+            if (!result.isOk()) {
+                System.err.println("Error when performing poll request: " + result.errorMessage());
+                try {
+                    Thread.sleep(250);
+                } catch (Exception e) {
+                    // do nothing
+                }
+                continue;
+            }  else if (result.get().equals(RequestStatus.PROCESSING)) {
+                System.err.println("Polling not ready yet.");
+                try {
+                    Thread.sleep(250);
+                } catch (InterruptedException e) {
+
+                }
+                continue;
+            }
+
+            System.out.println("Finished polling! result = " + result.get().toString());
+            return Optional.of(result.get());
         }
 
-        return Optional.of(result.get());
+        throw new RuntimeException("Finished unsuccessfully");
     }
 
     private Optional<ORMap> performFetchReadDataRequest() {
@@ -241,7 +321,7 @@ public class MockUI extends JFrame {
         String name = field.getText();
 
         if (!name.isEmpty()) {
-            this.sl.put(name, 0);
+            this.sl.insert(name);
             this.updateItemList();
             field.setText("");
         }
@@ -314,6 +394,21 @@ public class MockUI extends JFrame {
         return button;
     }
 
+    private void displayTemporaryMessage(JPanel panel, String message, int duration) {
+        JLabel label = new JLabel(message);
+
+        panel.add(label);
+
+        Timer timer = new Timer(duration, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panel.remove(label);
+            }
+        });
+
+        timer.setRepeats(false);
+        timer.start();
+    }
 
     private URL loadIcon(String path) {
         return Objects.requireNonNull(getClass().getResource(path));

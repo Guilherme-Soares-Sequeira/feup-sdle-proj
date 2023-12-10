@@ -265,21 +265,30 @@ public class NodeServer extends BaseServer {
             return response.toString();
         }
 
-        Optional<String> internalListOpt = kvstore.get(listID);
-
-        if (internalListOpt.isEmpty()) {
-            this.kvstore.put(listID, receivedListJson);
-
-            long responsibleVirtualNodeToken = this.ring.getFirstMatchedToken(new TreeSet<>(this.vnodeTokens.values()), listID);
-            this.virtualNodesLists.get(responsibleVirtualNodeToken).add(listID);
-
-            res.status(201);
-
+        ORMap receivedCRDT;
+        try {
+            receivedCRDT = ORMap.fromJson(receivedListJson);
+        } catch (JsonProcessingException e) {
+            String errorMessage = "Could not parse received crdt json";
+            res.status(400);
+            this.logError(endpoint, errorMessage);
+            response.put(JsonKeys.errorMessage, errorMessage);
             return response.toString();
         }
 
-        String internalListJson = internalListOpt.get();
+        Optional<String> internalListOpt = kvstore.get(listID);
 
+        if (internalListOpt.isEmpty()) {
+            ORMap newLocalOrMap = new ORMap(UUID.randomUUID().toString());
+            this.kvstore.put(listID, newLocalOrMap.toJson());
+
+            internalListOpt = Optional.of(newLocalOrMap.toJson());
+
+            long responsibleVirtualNodeToken = this.ring.getFirstMatchedToken(new TreeSet<>(this.vnodeTokens.values()), listID);
+            this.virtualNodesLists.get(responsibleVirtualNodeToken).add(listID);
+        }
+
+        String internalListJson = internalListOpt.get();
 
         ORMap localCRDT;
         try {
@@ -293,18 +302,11 @@ public class NodeServer extends BaseServer {
 
         }
 
-        ORMap receivedCRDT;
-        try {
-            receivedCRDT = ORMap.fromJson(receivedListJson);
-        } catch (JsonProcessingException e) {
-            String errorMessage = "Could not parse received crdt json";
-            res.status(400);
-            this.logError(endpoint, errorMessage);
-            response.put(JsonKeys.errorMessage, errorMessage);
-            return response.toString();
-        }
+        this.logWarning(endpoint, "local CRDT json: " + localCRDT.toJson());
+        this.logWarning(endpoint, "incoming CRDT json: " + receivedCRDT.toJson());
 
         localCRDT.join(receivedCRDT);
+        this.logWarning(endpoint, "merged CRDT json: " + localCRDT.toJson());
 
         this.kvstore.put(listID, localCRDT.toJson());
 
@@ -344,7 +346,9 @@ public class NodeServer extends BaseServer {
 
             return response.toString();
         }
-
+        
+        this.logWarning(endpoint, "Got listID");
+        
         // Get for
         String forID = req.params(":forId");
 
@@ -359,18 +363,21 @@ public class NodeServer extends BaseServer {
             return response.toString();
         }
 
+        this.logWarning(endpoint, "Got forID");
+
+
         res.status(202);
 
 
         // run this in parallel because we want to return 202 ASAP
         CompletableFuture.runAsync(() -> {
-            handleReadOperation(listID, endpoint);
+            handleReadOperation(listID, endpoint, forID);
         });
 
         return "";
     }
 
-    private void handleReadOperation(String listID, String endpoint) {
+    private void handleReadOperation(String listID, String endpoint, String forId) {
         System.out.println("GOT INTO HANDLE READ OPERATION");
 
         // Get healthy servers
@@ -378,13 +385,17 @@ public class NodeServer extends BaseServer {
         servers = this.getHealthyServers(servers, ConsistentHashingParameters.N);
 
         List<CompletableFuture<ShoppingListReturn>> futures = new ArrayList<>();
-
+        
+        this.logWarning(endpoint, "Created futures");
+        
         // do requests in parallel
         for (ServerInfo server : servers) {
             CompletableFuture<ShoppingListReturn> future = CompletableFuture.supplyAsync(() -> asyncReadRequest(listID, endpoint, server));
 
             futures.add(future);
         }
+        
+        this.logWarning(endpoint, "finished queueing futures");
 
 
         // Wait for a maximum of 700 milliseconds for all tasks to complete
@@ -394,6 +405,8 @@ public class NodeServer extends BaseServer {
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             // do nothing
         }
+        
+        this.logWarning(endpoint, "Finished waiting for futures.");
 
 
         // Extract CRDTs and update Ring from requests that finished successfully
@@ -409,7 +422,7 @@ public class NodeServer extends BaseServer {
                     }
 
                     responseList.add(res.crdt());
-
+                    this.logWarning(endpoint, "Added one CRDT to list");
                     continue;
                 } catch (ExecutionException | InterruptedException e) {
                     // do nothing
@@ -423,10 +436,20 @@ public class NodeServer extends BaseServer {
             }
         }
 
+        this.logWarning(endpoint, "Finished collecting responses");
+
         // Check criteria for READ fail
         if (responseList.size() < ConsistentHashingParameters.R) {
 
+            var wompWompResult = ServerRequests.updateReadRequest(LoadBalancer.lbinfo, forId, true, null);
+            if (!wompWompResult.isOk()) {
+                this.logError(endpoint, "Failed to inform LoadBalancer that READ failed: " + wompWompResult.errorMessage());
+            }
+
+            this.logWarning(endpoint, format("forId = {0}: READ FAIL, num responses = {1}", forId, responseList.size()));
+
             return;
+
         }
 
         ORMap accum = responseList.get(0);
@@ -440,10 +463,13 @@ public class NodeServer extends BaseServer {
         // Update local view of list
         this.kvstore.put(listID, accum.toJson());
 
-        // TODO: return it to loadbalancer
+        var hehehaResult = ServerRequests.updateReadRequest(LoadBalancer.lbinfo, forId, false, accum);
 
-        // simulating sending it to loadbalancer
-        this.logWarning(endpoint, format("[SIMULATION] READ OK: Sending the crdt to loadbalancer... json = {0}", accum.toJson()));
+        if (!hehehaResult.isOk()) {
+            this.logError(endpoint, "Failed to inform LoadBalancer that READ OK: " + hehehaResult.errorMessage());
+        }
+
+        this.logWarning(endpoint, format("forId = {0}: READ OK", forId));
     }
 
     private ShoppingListReturn asyncReadRequest(String listId, String endpoint, ServerInfo server) {
@@ -457,7 +483,7 @@ public class NodeServer extends BaseServer {
                 throw new RuntimeException("Runtime Exception due to local database not having the requested list");
             }
             try {
-                return new ShoppingListReturn(ORMap.fromJson(localListOpt.get()), Optional.empty()) ;
+                return new ShoppingListReturn(ORMap.fromJson(localListOpt.get()), Optional.empty());
             } catch (Exception e) {
                 String errorMessage = "Failed to parse CRDT from JSON: " + e;
                 this.logError(errorMessage, endpoint);
@@ -614,13 +640,22 @@ public class NodeServer extends BaseServer {
 
         // Check criteria for WRITE fail
         if (numberSuccessfulRequests < ConsistentHashingParameters.W) {
-            // TODO: Send a womp womp to load balancer
-            this.logWarning(endpoint, "[SIMULATION] WRITE FAIL: responses = " + numberSuccessfulRequests);
+
+            var wompWompResult = ServerRequests.updateWriteRequest(LoadBalancer.lbinfo, forId, true);
+            if (!wompWompResult.isOk()) {
+                this.logError(endpoint, "Failed to inform LoadBalancer that WRITE failed: " + wompWompResult.errorMessage());
+            }
+
+            this.logWarning(endpoint, format("forId = {0}: WRITE FAIL, num responses = {1}", forId, numberSuccessfulRequests));
+
             return;
         }
 
+        var hehehaResult = ServerRequests.updateWriteRequest(LoadBalancer.lbinfo, forId, false);
 
-        // TODO: return OK to loadbalancer
+        if (!hehehaResult.isOk()) {
+            this.logError(endpoint, "Failed to inform LoadBalancer that WRITE OK: " + hehehaResult.errorMessage());
+        }
 
         // simulating sending it to loadbalancer
         this.logWarning(endpoint, format("[SIMULATION] WRITE OK: sending OK to loadbalancer... for = {0}", forId));

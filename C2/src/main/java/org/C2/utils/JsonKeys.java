@@ -26,4 +26,10 @@ public class JsonKeys {
      * Used by the load balancer to inform the client of what' the status of a request when polled.
      */
     public static final String status = "status";
+
+    /**
+     * Used when informing LoadBalancer whether a WRITE operation failed or not.
+     */
+    public static final String error = "error";
+
 }

@@ -1,2 +1,0 @@
-{"replicaID":"a",
-  "map":{"banana":{"dotKernel":{"dotmap":[{"sequenceNumber":1,"replicaID":"a","dotValue":2}],"context":{"causalContext":{"a":1},"dotCloud":[]}},"id":"a"}},"mapKernel":{"helperDotMap":[{"sequenceNumber":1,"replicaID":"a","objectName":"banana"}],"helperContext":{"causalContext":{"a":1},"dotCloud":[]}}}

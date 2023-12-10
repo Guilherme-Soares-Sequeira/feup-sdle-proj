@@ -573,7 +573,7 @@ public class ServerRequests {
 
             ORMap list;
             try {
-                String listJson = bodyJson.getString(JsonKeys.status);
+                String listJson = bodyJson.getString(JsonKeys.list);
                 list = ORMap.fromJson(listJson);
             } catch (JsonProcessingException e) {
                 return HttpResult.err(999, "Could not parse list from JSON: " + e);
@@ -582,6 +582,64 @@ public class ServerRequests {
             }
 
             return HttpResult.ok(200, new FetchListInfo(status, list));
+        } catch (Exception e) {
+            return HttpResult.err(999, "Couldn't execute request: " + e);
+        }
+    }
+
+    // --------------------------------------------- PUT loadbalancer/nodes/read/{forId} -------------------------------
+
+    public static HttpResult<Void> updateReadRequest(ServerInfo serverInfo, String forId, boolean error, ORMap list) {
+        String url = format("http://{0}/nodes/read/{1}", serverInfo.fullRepresentation(), forId);
+
+        JSONObject putJson = new JSONObject();
+
+        putJson.put(JsonKeys.error, error);
+
+        if (!error) {
+            putJson.put(JsonKeys.list, list.toJson());
+        }
+        RequestBody putBody = RequestBody.create(putJson.toString(), MediaType.parse("application/json"));
+
+        Request putRequest = new Request.Builder().url(url).put(putBody).build();
+
+        try (Response response = client.newCall(putRequest).execute()) {
+            if (response.body() == null) {
+                return HttpResult.err(response.code(), "Request body is null.");
+            }
+
+            if (response.code() != 200) {
+                return httpErrorFromResponse(response);
+            }
+
+            return HttpResult.ok(200, null);
+        } catch (Exception e) {
+            return HttpResult.err(999, "Couldn't execute request: " + e);
+        }
+    }
+
+    // --------------------------------------- PUT loadbalancer/nodes/write/{forId} ------------------------------------
+
+    public static HttpResult<Void> updateWriteRequest(ServerInfo serverInfo, String forId, boolean error) {
+        String url = format("http://{0}/nodes/write/{1}", serverInfo.fullRepresentation(), forId);
+
+        JSONObject putJson = new JSONObject();
+
+        putJson.put(JsonKeys.error, error);
+        RequestBody putBody = RequestBody.create(putJson.toString(), MediaType.parse("application/json"));
+
+        Request putRequest = new Request.Builder().url(url).put(putBody).build();
+
+        try (Response response = client.newCall(putRequest).execute()) {
+            if (response.body() == null) {
+                return HttpResult.err(response.code(), "Request body is null.");
+            }
+
+            if (response.code() != 200) {
+                return httpErrorFromResponse(response);
+            }
+
+            return HttpResult.ok(200, null);
         } catch (Exception e) {
             return HttpResult.err(999, "Couldn't execute request: " + e);
         }

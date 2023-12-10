@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.UUID;
 
 public class ORMapDeserializer extends StdDeserializer<ORMap> {
 
@@ -29,7 +30,6 @@ public class ORMapDeserializer extends StdDeserializer<ORMap> {
     public ORMap deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JacksonException {
         JsonNode root = p.getCodec().readTree(p);
         String replicaID = root.get(SerializingConstants.MAP_ID).asText();
-
         Map<String, CCounter> map = new HashMap<>();
 
         JsonNode mapNode = root.get(SerializingConstants.MAP);

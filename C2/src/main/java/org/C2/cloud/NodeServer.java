@@ -86,6 +86,7 @@ public class NodeServer extends BaseServer {
 
     public void stop() {
         this.http.stop();
+
     }
 
     private String getInternalRing(Request req, Response res) {

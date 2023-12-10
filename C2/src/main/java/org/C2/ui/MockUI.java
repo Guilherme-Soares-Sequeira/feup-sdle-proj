@@ -179,7 +179,7 @@ public class MockUI extends JFrame {
 
         this.updateItemList();
 
-        JFrame frame = new JFrame(this.url);
+        JFrame frame = new JFrame(this.username);
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(this.width, this.height);

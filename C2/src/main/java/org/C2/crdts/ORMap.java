@@ -128,8 +128,9 @@ public class ORMap {
                         this.dotKernel.getDotMap().replace(entry.getKey(), otherDot);
                     }
                 }
+                this.map.get(entry.getKey()).getContext().join(other.map.get(entry.getKey()).getContext());
             }
-            this.map.get(entry.getKey()).getContext().join(other.map.get(entry.getKey()).getContext());
+
             this.dotKernel.setContext(immutableContext);
         }
 
@@ -143,7 +144,6 @@ public class ORMap {
                 }
             }
         }
-
         this.dotKernel.getContext().join(other.dotKernel.getContext());
     }
 
@@ -170,10 +170,6 @@ public class ORMap {
         }
 
         CCounter counter = value(id);
-
-        /*
-         TODO: ver esta implementação. não sei se vou ter tocar no dorContext do ORMAP
-        */
 
         if (counter.value() > value) {
             counter.dec(counter.value() - value);

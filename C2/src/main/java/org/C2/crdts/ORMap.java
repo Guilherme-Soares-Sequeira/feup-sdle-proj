@@ -133,14 +133,18 @@ public class ORMap{
             this.map.get(entry.getKey()).getContext().join(other.map.get(entry.getKey()).getContext());
             this.dotKernel.setContext(immutableContext);
         }
-        for(Map.Entry<String, CCounter> entry : this.map.entrySet()){
+
+        Iterator<Map.Entry<String, CCounter>> iterator = this.map.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, CCounter> entry = iterator.next();
             Dot dot = this.dotKernel.getDotMap().get(entry.getKey());
-            if(!other.map.containsKey(entry.getKey())){
-                if(other.dotKernel.getContext().containsDot(dot)){
-                    this.erase(entry.getKey());
+            if (!other.map.containsKey(entry.getKey())) {
+                if (other.dotKernel.getContext().containsDot(dot)) {
+                    iterator.remove();
                 }
             }
         }
+
         this.dotKernel.getContext().join(other.dotKernel.getContext());
     }
 

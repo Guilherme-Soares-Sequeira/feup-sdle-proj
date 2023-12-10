@@ -24,7 +24,7 @@ public class ORMapSerializer extends StdSerializer<ORMap> {
         //for the dot kernel, call the DotKernelSerializer serializer
         gen.writeStringField(SerializingConstants.MAP_ID, value.id());
         gen.writeObjectField(SerializingConstants.MAP, value.map());
-        gen.writeObjectField(SerializingConstants.MAP_CONTEXT, value.context());
+        gen.writeObjectField(SerializingConstants.KERNEL, value.getDotKernel());
         gen.writeEndObject();
     }
 }

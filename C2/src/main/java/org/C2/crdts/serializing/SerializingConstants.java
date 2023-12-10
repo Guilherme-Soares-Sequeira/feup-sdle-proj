@@ -27,6 +27,11 @@ public class SerializingConstants {
 
     public static final String MAP_ID = "replicaID";
 
-    public static final String MAP_CONTEXT = "mapContext";
+    public static final String KERNEL = "mapKernel";
+
+    //ORMapHelper
+    public static final String HELPER_DOT_MAP = "helperDotMap";
+
+    public static final String HELPER_CONTEXT = "helperContext";
 
 }

@@ -1,12 +1,22 @@
 package org.C2.crdts;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.C2.crdts.serializing.deserializers.ORMapHelperDeserializer;
+import org.C2.crdts.serializing.serializers.ORMapHelperSerializer;
+
 import java.util.HashMap;
 import java.util.Map;
 
-
+@JsonSerialize(using = ORMapHelperSerializer.class)
+@JsonDeserialize(using = ORMapHelperDeserializer.class)
 public class ORMapHelper {
     private Map<String, Dot> dotMap;
     private DotContext context;
+
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     public ORMapHelper() {
         this.dotMap = new HashMap<>();
@@ -18,6 +28,10 @@ public class ORMapHelper {
         this.context = context;
     }
 
+    public ORMapHelper(DotContext context, Map<String, Dot> dotMap) {
+        this.dotMap = dotMap;
+        this.context = context;
+    }
 
     public ORMapHelper deepCopy(){
         ORMapHelper newDotKernel = new ORMapHelper();
@@ -68,5 +82,24 @@ public class ORMapHelper {
     public void joinContext(ORMapHelper other){
 
         this.context.join(other.context);
+    }
+
+    public String toJson() throws JsonProcessingException {
+        return jsonMapper.writeValueAsString(this);
+    }
+
+    public static ORMapHelper fromJson(String json) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(json, ORMapHelper.class);
+    }
+
+    public void print(){
+        System.out.println("Dot Map: ");
+        for(Map.Entry<String, Dot> entry: this.dotMap.entrySet()){
+            System.out.println("Key: " + entry.getKey());
+            entry.getValue().print();
+        }
+        System.out.println("Context: ");
+        this.context.print();
     }
 }

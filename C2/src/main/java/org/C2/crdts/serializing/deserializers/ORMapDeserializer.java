@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.C2.crdts.CCounter;
 import org.C2.crdts.DotContext;
 import org.C2.crdts.ORMap;
+import org.C2.crdts.ORMapHelper;
 
 import java.io.IOException;
 import java.util.Map;
@@ -27,8 +28,7 @@ public class ORMapDeserializer extends StdDeserializer<ORMap> {
         JsonNode root = p.getCodec().readTree(p);
         String replicaID = root.get("replicaID").asText();
         Map<String, CCounter> map = p.getCodec().treeToValue(root.get("map"), Map.class);
-        DotContext context = p.getCodec().treeToValue(root.get("mapContext"), DotContext.class);
-       // return new ORMap(replicaID, map, context);
-        return new ORMap(replicaID);
+        ORMapHelper kernel = p.getCodec().treeToValue(root.get("mapKernel"), ORMapHelper.class);
+        return new ORMap(replicaID, map, kernel);
     }
 }

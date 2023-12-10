@@ -2,6 +2,7 @@ package org.C2;
 
 
 
+import org.C2.crdts.ORMapHelper;
 import org.json.JSONException;
 import java.io.IOException;
 import org.C2.crdts.ORMap;
@@ -32,7 +33,9 @@ public class Main {
 
         map1.join(map2);
 
+        System.out.println("Map1");
         //map1.erase("banana");
+
 
         System.out.println("Serializing...");
         String serialized = map1.toJson();
@@ -41,6 +44,8 @@ public class Main {
         ORMap or = ORMap.fromJson(serialized);
         or.printOrMap();
         System.out.println("Map1 merged");
+
+
     }
 }
 

@@ -32,13 +32,15 @@ public class ORMap{
         this.map = new HashMap<>();
         this.id = id;
     }
-/*
-    public ORMap(String id, Map<String, CCounter> map, DotContext context) {
-        this.dotKernel = ;
+
+    public ORMap(String id, Map<String, CCounter> map, ORMapHelper orMapHelper) {
+        this.dotKernel = orMapHelper;
         this.map = map;
         this.id = id;
     }
-*/
+    public ORMapHelper getDotKernel(){
+        return this.dotKernel;
+    }
     public DotContext context(){
         return dotKernel.getContext();
     }
@@ -167,6 +169,8 @@ public class ORMap{
         System.out.println("ORMap: " + this.id);
         //System.out.println("Context: " + this.context);
         System.out.println("Map: " + this.map);
+        System.out.println("DotKernel: ");
+        this.dotKernel.print();
 
     }
 

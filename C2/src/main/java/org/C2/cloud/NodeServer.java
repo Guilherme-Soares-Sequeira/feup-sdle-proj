@@ -7,6 +7,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import spark.Response;
 import spark.Request;
+import spark.Service;
 
 import static java.text.MessageFormat.format;
 
@@ -23,6 +24,7 @@ public class NodeServer extends BaseServer {
     private final int numberOfVirtualNodes;
     private final Map<Long, Set<String>> virtualNodesLists;
     private final Map<Integer, Long> vnodeTokens;
+    private Service http;
 
     public NodeServer(String identifier, int port, boolean seed, int numberOfVirtualNodes) {
         super(identifier, port);
@@ -59,7 +61,9 @@ public class NodeServer extends BaseServer {
             this.virtualNodesLists.get(responsibleVnodeToken).add(list);
         }
 
-        port(this.serverInfo.port());
+        this.http = Service.ignite();
+
+        this.http.port(this.serverInfo.port());
         this.defineRoutes();
 
         if (!this.seed) this.querySeeds();
@@ -67,17 +71,21 @@ public class NodeServer extends BaseServer {
 
     @Override
     protected synchronized void defineRoutes() {
-        get("/pulse", this::pulse);
+        this.http.get("/pulse", this::pulse);
 
-        get("/internal/ring", this::getInternalRing);
-        get("/external/ring", this::getExternalRing);
-        put("/external/ring", this::putExternalRing);
+        this.http.get("/internal/ring", this::getInternalRing);
+        this.http.get("/external/ring", this::getExternalRing);
+        this.http.put("/external/ring", this::putExternalRing);
 
-        get("/internal/shopping-list/:id", this::getInternalShoppingList);
-        put("/internal/shopping-list/:id", this::putInternalShoppingList);
+        this.http.get("/internal/shopping-list/:id", this::getInternalShoppingList);
+        this.http.put("/internal/shopping-list/:id", this::putInternalShoppingList);
 
-        get("/external/shopping-list/:id/:forId", this::getExternalShoppingList);
-        put("/external/shopping-list/:id", this::putExternalShoppingList);
+        this.http.get("/external/shopping-list/:id/:forId", this::getExternalShoppingList);
+        this.http.put("/external/shopping-list/:id", this::putExternalShoppingList);
+    }
+
+    public void stop() {
+        this.http.stop();
     }
 
     private String getInternalRing(Request req, Response res) {
@@ -416,7 +424,7 @@ public class NodeServer extends BaseServer {
         // Check criteria for READ fail
         if (responseList.size() < ConsistentHashingParameters.R) {
             // TODO: Send a womp womp to load balancer
-            this.logWarning(endpoint, "Simulating sending a womp womp to load balancer");
+            this.logWarning(endpoint, "[SIMULATION] READ FAIL: responses = " + responseList.size());
             return;
         }
 
@@ -434,7 +442,7 @@ public class NodeServer extends BaseServer {
         // TODO: return it to loadbalancer
 
         // simulating sending it to loadbalancer
-        this.logWarning(endpoint, format("Simulating sending the crdt to loadbalancer... json = {0}", accum.toJson()));
+        this.logWarning(endpoint, format("[SIMULATION] READ OK: Sending the crdt to loadbalancer... json = {0}", accum.toJson()));
     }
 
     private ShoppingListReturn asyncReadRequest(String listId, String endpoint, ServerInfo server) {
@@ -608,7 +616,7 @@ public class NodeServer extends BaseServer {
         // Check criteria for WRITE fail
         if (numberSuccessfulRequests < ConsistentHashingParameters.W) {
             // TODO: Send a womp womp to load balancer
-            this.logWarning(endpoint, "Simulating sending a womp womp to load balancer");
+            this.logWarning(endpoint, "[SIMULATION] WRITE FAIL: responses = " + numberSuccessfulRequests);
             return;
         }
 
@@ -616,7 +624,7 @@ public class NodeServer extends BaseServer {
         // TODO: return OK to loadbalancer
 
         // simulating sending it to loadbalancer
-        this.logWarning(endpoint, format("Simulating sending OK to loadbalancer... for = {0}", forId));
+        this.logWarning(endpoint, format("[SIMULATION] WRITE OK: sending OK to loadbalancer... for = {0}", forId));
     }
 
     // TODO: Change CRDT implementation

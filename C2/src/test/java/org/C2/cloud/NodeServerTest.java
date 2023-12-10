@@ -9,6 +9,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.junit.jupiter.api.*;
 import okhttp3.MediaType;
+import spark.Service;
 import spark.utils.Assert;
 
 import java.io.File;
@@ -21,7 +22,9 @@ import static spark.Spark.*;
 
 public class NodeServerTest {
     private NodeServer server;
+    private NodeServer server2;
     ServerInfo serverInfo;
+
 
     @BeforeEach
     public void setup() {
@@ -29,11 +32,16 @@ public class NodeServerTest {
 
         this.server = new NodeServer(serverInfo.identifier(), serverInfo.port(), false, 3);
         this.server.init();
+
+        this.server2 = new NodeServer("localhost", 4445, false, 2);
+        this.server2.init();
+
     }
 
     @AfterEach
     public void tearDown() throws Exception {
-        stop();
+        this.server.stop();
+        this.server2.stop();
 
         String dir = "kvstore";
 
@@ -139,6 +147,5 @@ public class NodeServerTest {
 
         Assertions.assertTrue(receivedList.isEquivalent(sl1));
     }
-
 
 }

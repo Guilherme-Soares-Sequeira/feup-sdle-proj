@@ -232,14 +232,28 @@ public class NodeServer extends BaseServer {
             return response.toString();
         }
 
-        String receivedListJson = req.attribute(JsonKeys.list);
-        if (receivedListJson == null) {
-            String errmsg = "The received list is invalid.";
+        JSONObject bodyJson;
+
+        try {
+            bodyJson = new JSONObject(new JSONTokener(req.body()));
+        } catch (Exception e) {
+            String errmsg = "Could not parse body from request.";
 
             this.logError(endpoint, errmsg);
             res.status(400);
             response.put(JsonKeys.errorMessage, errmsg);
+            return response.toString();
+        }
 
+        String receivedListJson;
+        try {
+            receivedListJson = bodyJson.getString(JsonKeys.list);
+        } catch (Exception e) {
+            String errmsg = "Could not find shopping list in request body.";
+
+            this.logError(endpoint, errmsg);
+            res.status(400);
+            response.put(JsonKeys.errorMessage, errmsg);
             return response.toString();
         }
 

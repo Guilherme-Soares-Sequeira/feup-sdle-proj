@@ -4,10 +4,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.C2.utils.JsonKeys;
-import org.C2.utils.ServerInfo;
-import org.C2.utils.ServerRequests;
-import org.C2.utils.HttpResult;
+import org.C2.utils.*;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.junit.jupiter.api.*;
@@ -22,10 +19,13 @@ import static spark.Spark.stop;
 
 public class NodeServerTest {
     private NodeServer server;
+    ServerInfo serverInfo;
 
     @BeforeEach
     public void setup() {
-        this.server = new NodeServer("localhost", 4444, false, 3);
+        this.serverInfo = new ServerInfo("localhost", 4444);
+
+        this.server = new NodeServer(serverInfo.identifier(), serverInfo.port(), false, 3);
         this.server.init();
     }
 
@@ -110,8 +110,19 @@ public class NodeServerTest {
 
     @Test
     public void internalShoppingListTest() throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        String url = "http://localhost:4444/1";
+        MockCRDT sl1 = new MockCRDT();
+
+        String listID = "something";
+
+        sl1.put("banana", 3);
+        sl1.put("apple", 2);
+
+        ConsistentHasher ch = new ConsistentHasher(-1);
+
+        var result = ServerRequests.putInternalShoppingList(this.serverInfo, listID, sl1, ch);
+        
+        Assertions.assertTrue(result.isOk());
+
     }
 
 

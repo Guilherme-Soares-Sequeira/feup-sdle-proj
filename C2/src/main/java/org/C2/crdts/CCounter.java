@@ -34,6 +34,11 @@ public class CCounter {
         this.id = id;
     }
 
+    public CCounter(String id, DotKernel dotKernel, DotContext context){
+        this.dotKernel = new DotKernel(context, dotKernel.getDotMap());
+        this.id = id;
+    }
+
     public CCounter(String id, DotKernel dotKernel){
         this.dotKernel = dotKernel;
         this.id = id;

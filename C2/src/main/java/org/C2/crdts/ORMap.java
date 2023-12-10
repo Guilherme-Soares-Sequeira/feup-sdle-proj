@@ -119,17 +119,18 @@ public class ORMap{
                 }
                 else if (other.dotKernel.getContext().containsDot(localDot) ){ // other object is newer
 
-                    this.map.replace(entry.getKey(), entry.getValue());
+                    this.map.replace(entry.getKey(), new CCounter(this.id,entry.getValue().getDotKernel(), this.dotKernel.getContext()));
                     this.dotKernel.getDotMap().replace(entry.getKey(), otherDot);
                 }
                 else{       // completely different objects
 
                     if( this.map.get(entry.getKey()).value() < other.map.get(entry.getKey()).value() ){  // Keep the biggest value
-                        this.map.replace(entry.getKey(), entry.getValue());
+                        this.map.replace(entry.getKey(), new CCounter(this.id,entry.getValue().getDotKernel(), this.dotKernel.getContext()));
                         this.dotKernel.getDotMap().replace(entry.getKey(), otherDot);
                     }
                 }
             }
+            this.map.get(entry.getKey()).getContext().join(other.map.get(entry.getKey()).getContext());
             this.dotKernel.setContext(immutableContext);
         }
         for(Map.Entry<String, CCounter> entry : this.map.entrySet()){

@@ -32,7 +32,7 @@ public class Main {
         map2.value("orange").inc(5);
 
         map1.join(map2);
-
+        map1.value("banana").inc(2);
         System.out.println("Map1");
         //map1.erase("banana");
 

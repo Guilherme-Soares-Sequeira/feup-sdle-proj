@@ -7,6 +7,7 @@ import org.C2.cloud.database.KVStore;
 import org.C2.crdts.ORMap;
 import org.C2.utils.*;
 import org.eclipse.jetty.server.Server;
+import org.intellij.lang.annotations.Flow;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -18,6 +19,7 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.SQLOutput;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,11 +28,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class MockUI extends JFrame {
-    private final KVStore kvstore;
+    private KVStore kvstore;
     private final int width;
     private final int height;
     private String url;
     private String forID;
+    private String username;
     private ORMap sl;
     private JPanel addItemPanel;
     private JPanel itemListPanel;
@@ -41,7 +44,6 @@ public class MockUI extends JFrame {
     // TODO 4: add a log message for errors (PUSH/PULL fails) (maybe done)
 
     public MockUI() {
-        this.kvstore = new KVStore("users", true);
 
         this.loadUI();
 
@@ -55,35 +57,85 @@ public class MockUI extends JFrame {
         super.setVisible(true);
     }
 
+    // insert username
+    // insert url
     private void loadUI() {
+        JPanel enterUsernamePanel = new JPanel();
+        JLabel enterUsernameLabel = new JLabel("Enter username: ");
+        JButton submitUsername = new JButton("OK");
+        JTextField usernameTextField = new JTextField(20);
+
+        enterUsernamePanel.add(enterUsernameLabel);
+        enterUsernamePanel.add(usernameTextField);
+        enterUsernamePanel.add(submitUsername);
+
+        enterUsernamePanel.setVisible(true);
+        super.add(enterUsernamePanel);
+
+        submitUsername.addActionListener(e -> {
+            this.username = usernameTextField.getText();
+
+            this.kvstore = new KVStore("users/" + this.username, true);
+
+            enterUsernamePanel.setVisible(false);
+
+            this.insertUrl();
+        });
+    }
+
+    private void insertUrl() {
         JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(2, 1));
+
+        JPanel subPanel = new JPanel();
+        subPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+
+        JPanel subPanel1 = new JPanel();
+        subPanel1.setLayout(new FlowLayout(FlowLayout.CENTER));
+
         JLabel label = new JLabel("Enter shopping list URL: ");
         JButton button = new JButton("Submit");
         JButton createShoppingListButton = new JButton("New Shopping List");
 
         JTextField urlTextField = new JTextField(36);
 
+        List<String> lists = this.kvstore.getLists();
+
+        for (String list : lists) {
+            JButton listButton = new JButton(list);
+
+            listButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    Optional<String> retrievedList = kvstore.get(list);
+
+                    if (retrievedList.isPresent()) {
+                        try {
+                            url = list;
+                            showShoppingList(retrievedList.get());
+                        } catch (JsonProcessingException ex) {
+                            throw new RuntimeException(ex);
+                        }
+
+                        dispose();
+                    } else {
+                        System.err.println("That shopping list does not exist.");
+                    }
+                }
+            });
+
+            subPanel.add(listButton);
+        }
+
         this.itemListPanel = new JPanel();
         this.itemListPanel.setLayout(new BoxLayout(this.itemListPanel, BoxLayout.Y_AXIS));
 
         button.addActionListener(e -> {
-            String url = urlTextField.getText();
-            this.url = url;
+            String inputURL = urlTextField.getText();
+            this.url = inputURL;
 
-            Optional<String> list = this.kvstore.get(url);
-
-            if (list.isPresent()) {
-                try {
-                    this.showShoppingList(list.get());
-                } catch (JsonProcessingException ex) {
-                    throw new RuntimeException(ex);
-                }
-
-                super.dispose();
-            } else {
-                System.err.println("That shopping list does not exist.");
-            }
-
+            fetchListFromCloud();
         });
 
         createShoppingListButton.addActionListener(e -> {
@@ -95,17 +147,20 @@ public class MockUI extends JFrame {
 
             try {
                 showShoppingList(emptyList);
-                
+
                 super.dispose();
             } catch (JsonProcessingException ex) {
                 System.err.println("Could not display the created shopping list: " + ex);
             }
         });
 
-        panel.add(label);
-        panel.add(urlTextField);
-        panel.add(button);
-        panel.add(createShoppingListButton);
+        subPanel1.add(label);
+        subPanel1.add(urlTextField);
+        subPanel1.add(button);
+        subPanel1.add(createShoppingListButton);
+
+        panel.add(subPanel1);
+        panel.add(subPanel);
 
         super.add(panel);
     }
@@ -167,63 +222,7 @@ public class MockUI extends JFrame {
         pullButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Pull button was called.");
-                if (!performReadRequest()) {
-                    System.out.println("performReadRequest() failed");
-                    return;
-                }
-
-                CompletableFuture<Optional<RequestStatus>> future = CompletableFuture.supplyAsync(() -> performPollRequest());
-
-                Optional<RequestStatus> pollStatus;
-                try {
-                    System.out.println("Im in the poll status");
-                    pollStatus = future.get(4000, TimeUnit.MILLISECONDS);
-                } catch ( InterruptedException | java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException ex) {
-                    System.out.println("Catched exception: " + ex);
-                    future.cancel(true);
-                    return;
-                }
-
-                System.out.println("Hello 1");
-
-                if (pollStatus.isEmpty() || !pollStatus.get().equals(RequestStatus.DONE)) {
-                    System.out.println("Displaying response time out message");
-                    displayTemporaryMessage(addItemPanel, "Response timeout", 3);
-
-                    return;
-                }
-
-                System.out.println("Hello 2");
-
-                Optional<ORMap> fetchedList = performFetchReadDataRequest();
-
-                if (fetchedList.isPresent()) {
-                    System.out.println("I got a list from the read request");
-
-                    for (Pair<String, Integer> entry: fetchedList.get().read()) {
-                        String k = entry.getFirst();
-                        int v = entry.getSecond();
-
-                        System.out.println("k: " + k);
-                        System.out.println("v: " + v);
-                    }
-
-                    sl.join(fetchedList.get());
-
-                    System.out.println("After joining the received CRDT:");
-
-                    for (Pair<String, Integer> entry: sl.read()) {
-                        String k = entry.getFirst();
-                        int v = entry.getSecond();
-
-                        System.out.println("merged k: " + k);
-                        System.out.println("merged v: " + v);
-                    }
-
-                    updateItemList();
-                }
-
+                fetchListFromCloud();
             }
         });
 
@@ -244,8 +243,68 @@ public class MockUI extends JFrame {
         return addItemPanel;
     }
 
+    private void fetchListFromCloud() {
+        System.out.println("Pull button was called.");
+        if (!performReadRequest()) {
+            System.out.println("performReadRequest() failed");
+            return;
+        }
+
+        CompletableFuture<Optional<RequestStatus>> future = CompletableFuture.supplyAsync(() -> performPollRequest());
+
+        Optional<RequestStatus> pollStatus;
+        try {
+            System.out.println("Im in the poll status");
+            pollStatus = future.get(4000, TimeUnit.MILLISECONDS);
+        } catch ( InterruptedException | java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException ex) {
+            System.out.println("Catched exception: " + ex);
+            future.cancel(true);
+            return;
+        }
+
+        System.out.println("Hello 1");
+
+        if (pollStatus.isEmpty() || !pollStatus.get().equals(RequestStatus.DONE)) {
+            System.out.println("Displaying response time out message");
+            displayTemporaryMessage(addItemPanel, "Response timeout", 3);
+
+            return;
+        }
+
+        System.out.println("Hello 2");
+
+        Optional<ORMap> fetchedList = performFetchReadDataRequest();
+
+        if (fetchedList.isPresent()) {
+            System.out.println("I got a list from the read request");
+
+            for (Pair<String, Integer> entry: fetchedList.get().read()) {
+                String k = entry.getFirst();
+                int v = entry.getSecond();
+
+                System.out.println("k: " + k);
+                System.out.println("v: " + v);
+            }
+
+            sl.join(fetchedList.get());
+
+            System.out.println("After joining the received CRDT:");
+
+            for (Pair<String, Integer> entry: sl.read()) {
+                String k = entry.getFirst();
+                int v = entry.getSecond();
+
+                System.out.println("merged k: " + k);
+                System.out.println("merged v: " + v);
+            }
+
+            updateItemList();
+        }
+    }
     private void performWriteRequest(String endpoint) {
         System.out.println("[UI] - You have clicked the PUSH button");
+
+        System.out.println("url: " + this.url);
 
         for (Pair<String, Integer> entry: this.sl.read()) {
             String k = entry.getFirst();

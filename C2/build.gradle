@@ -16,6 +16,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     implementation group: 'org.automerge', name: 'automerge', version: "0.0.4"
     implementation group: 'org.mongodb', name: 'mongo-java-driver', version: '3.12.14'
+    implementation group: 'org.json', name: 'org.json', version: 'chargebee-1.0'
 }
 
 application {

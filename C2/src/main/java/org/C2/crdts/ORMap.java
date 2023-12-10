@@ -1,15 +1,31 @@
 package org.C2.crdts;
+
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.C2.crdts.serializing.deserializers.ORMapDeserializer;
+import org.C2.crdts.serializing.serializers.ORMapSerializer;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.C2.utils.Pair;
 import org.automerge.AmValue;
 
 import java.util.*;
 
 
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+@JsonSerialize(using = ORMapSerializer.class)
+@JsonDeserialize(using = ORMapDeserializer.class)
 public class ORMap{
 
     private Map<String, CCounter> map;
     private ORMapHelper dotKernel;
     private String id;
+
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     public ORMap(String id) {
         this.dotKernel = new ORMapHelper();
@@ -17,11 +33,25 @@ public class ORMap{
         this.id = id;
     }
 
-
+    public ORMap(String id, Map<String, CCounter> map, ORMapHelper orMapHelper) {
+        this.dotKernel = orMapHelper;
+        this.map = map;
+        this.id = id;
+    }
+    public ORMapHelper getDotKernel(){
+        return this.dotKernel;
+    }
     public DotContext context(){
         return dotKernel.getContext();
     }
 
+    public String id(){
+        return id;
+    }
+
+    public Map<String, CCounter> map(){
+        return map;
+    }
     public CCounter value(String id){
         return this.map.get(id);
     }
@@ -123,5 +153,25 @@ public class ORMap{
     }
 
 
+
+
+
+    public String toJson() throws JsonProcessingException {
+        return jsonMapper.writeValueAsString(this);
+    }
+
+    public static ORMap fromJson(String json) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(json, ORMap.class);
+    }
+
+    public void printOrMap(){
+        System.out.println("ORMap: " + this.id);
+        //System.out.println("Context: " + this.context);
+        System.out.println("Map: " + this.map);
+        System.out.println("DotKernel: ");
+        this.dotKernel.print();
+
+    }
 
 }

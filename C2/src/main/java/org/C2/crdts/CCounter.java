@@ -1,12 +1,19 @@
 package org.C2.crdts;
 
-import org.automerge.AmValue;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.C2.crdts.serializing.deserializers.CCounterDeserializer;
+import org.C2.crdts.serializing.serializers.CCounterSerializer;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@JsonSerialize(using = CCounterSerializer.class)
+@JsonDeserialize(using = CCounterDeserializer.class)
 public class CCounter {
     private DotKernel dotKernel;
     private String id;
@@ -27,8 +34,17 @@ public class CCounter {
         this.id = id;
     }
 
+    public CCounter(String id, DotKernel dotKernel){
+        this.dotKernel = dotKernel;
+        this.id = id;
+    }
+
     public DotKernel getDotKernel(){
         return this.dotKernel;
+    }
+
+    public String getId(){
+        return this.id;
     }
 
     public DotContext getContext(){
@@ -99,4 +115,19 @@ public class CCounter {
         return res;
     }
 
+    ObjectMapper mapper = new ObjectMapper();
+
+    public String toJson() throws JsonProcessingException {
+        return mapper.writeValueAsString(this);
+    }
+
+    public static CCounter fromJson(String json) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(json, CCounter.class);
+    }
+
+    public void print() {
+        System.out.println("CCounter: " + this.id + " " + this.value());
+        this.dotKernel.print();
+    }
 }

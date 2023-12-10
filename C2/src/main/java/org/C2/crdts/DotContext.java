@@ -1,15 +1,28 @@
 package org.C2.crdts;
 import java.util.*;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.C2.crdts.serializing.deserializers.DotContextDeserializer;
+import org.C2.crdts.serializing.serializers.DotContextSerializer;
 
-
-
+@JsonSerialize(using = DotContextSerializer.class)
+@JsonDeserialize(using = DotContextDeserializer.class)
 public class DotContext {
     private Map<String, Integer> causalContext; // Compact causal context
     private Set<Dot> dotCloud; // Dot cloud
-
+    private final ObjectMapper jsonMapper;
     public DotContext() {
         this.causalContext = new HashMap<>();
         this.dotCloud = new HashSet<>();
+        this.jsonMapper = new ObjectMapper();
+    }
+
+    public DotContext(Map<String, Integer> causalContext, Set<Dot> dotCloud) {
+        this.causalContext = causalContext;
+        this.dotCloud = dotCloud;
+        this.jsonMapper = new ObjectMapper();
     }
 
     public Map<String, Integer> getCausalContext() {
@@ -99,6 +112,17 @@ public class DotContext {
         System.out.println("Causal context: " + this.causalContext);
         System.out.println("Dot cloud: " + this.dotCloud);
     }
+
+
+    public String toJSON() throws JsonProcessingException {
+        return this.jsonMapper.writeValueAsString(this);
+    }
+
+    public static DotContext fromJSON(String json) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(json, DotContext.class);
+    }
+
 
 
 }

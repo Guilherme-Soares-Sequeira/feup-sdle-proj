@@ -56,11 +56,11 @@ public class NodeServerTest {
 
         String dir = "kvstore";
 
-
+        /*
         Files.walk(Paths.get(dir))
                 .map(Path::toFile)
                 .forEach(File::delete);
-
+        */
         try {
             Thread.sleep(100);
         } catch (Exception e) {
@@ -261,7 +261,7 @@ public class NodeServerTest {
         sl.put("banana", 3);
         sl.put("apple", 5);
 
-        String listID = "testexternalfail";
+        String listID = "testexternal";
 
         String forID = "cloudcart3";
 

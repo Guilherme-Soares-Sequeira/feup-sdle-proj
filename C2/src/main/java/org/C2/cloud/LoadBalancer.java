@@ -306,13 +306,24 @@ public class LoadBalancer extends BaseServer {
         return response.toString();
     }
 
-    private ServerInfo getRandomServer() {
+    private ServerInfo getRandomHealthyServer() {
         List<ServerInfo> servers = new ArrayList<>(this.ring.getAllServers());
 
         Random random = new Random();
         int randomIndex = random.nextInt(servers.size());
+        ServerInfo selected = servers.get(randomIndex);
 
-        return servers.get(randomIndex);
+        int counter = 0;
+        while (counter < 3) {
+            var pulse = ServerRequests.checkPulse(selected, 200);
+            if (pulse.isOk()) return selected;
+
+            randomIndex = random.nextInt(servers.size());
+            selected = servers.get(randomIndex);
+            counter++;
+        }
+
+        return null;
     }
 
     private String read(Request req, Response res) {
@@ -320,7 +331,18 @@ public class LoadBalancer extends BaseServer {
         final String endpoint = "GET /read/{ID}";
 
         // get the random server
-        ServerInfo serverInfo = getRandomServer();
+        ServerInfo serverInfo = getRandomHealthyServer();
+
+        if (serverInfo == null) {
+            final String errorString = "Could not find a healthy server.";
+
+            this.logError(endpoint, errorString);
+
+            res.status(500);
+            response.put(JsonKeys.errorMessage, errorString);
+
+            return response.toString();
+        }
 
         // get the id
         String listID = req.params(":id");
@@ -359,7 +381,18 @@ public class LoadBalancer extends BaseServer {
         final JSONObject response = new JSONObject();
         final String endpoint = "PUT /write/{ID}";
 
-        ServerInfo serverInfo = this.getRandomServer();
+        ServerInfo serverInfo = this.getRandomHealthyServer();
+
+        if (serverInfo == null) {
+            final String errorString = "Could not find a healthy server.";
+
+            this.logError(endpoint, errorString);
+
+            res.status(500);
+            response.put(JsonKeys.errorMessage, errorString);
+
+            return response.toString();
+        }
 
         String listID = req.params(":id");
 

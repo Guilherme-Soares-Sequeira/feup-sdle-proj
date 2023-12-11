@@ -199,6 +199,9 @@ public class LoadBalancer extends BaseServer {
             return response.toString();
         }
 
+        System.out.println("[LOADBALANCER] fetched list json = " + list);
+
+
         RequestStatus status;
         try {
             status = this.requestStatusMap.get(forID);

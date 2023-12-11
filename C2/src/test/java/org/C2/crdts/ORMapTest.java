@@ -43,7 +43,7 @@ public class ORMapTest {
     }
 
     @Test
-    public void testEquals(){
+    public void testEquals() {
         ORMap ormap1 = new ORMap("a");
         ORMap ormap2 = new ORMap("b");
 
@@ -53,7 +53,7 @@ public class ORMapTest {
     }
 
     @Test
-    public void testNotEquals(){
+    public void testNotEquals() {
         ORMap ormap1 = new ORMap("a");
         ORMap ormap2 = new ORMap("b");
 
@@ -63,7 +63,7 @@ public class ORMapTest {
     }
 
     @Test
-    public void testDeleteOverOperation(){
+    public void testDeleteOverOperation() {
         ORMap ormap1 = new ORMap("a");
         ORMap ormap2 = new ORMap("b");
         ORMap res = new ORMap("c");
@@ -78,7 +78,7 @@ public class ORMapTest {
     }
 
     @Test
-    public void testMergeDifferent(){
+    public void testMergeDifferent() {
         ORMap ormap1 = new ORMap("a");
         ORMap ormap2 = new ORMap("b");
 
@@ -94,7 +94,7 @@ public class ORMapTest {
     }
 
     @Test
-    public void testMergeSameNew(){
+    public void testMergeSameNew() {
         ORMap ormap1 = new ORMap("a");
         ORMap ormap2 = new ORMap("b");
 
@@ -111,7 +111,7 @@ public class ORMapTest {
     }
 
     @Test
-    public void testNegative(){
+    public void testNegative() {
         ORMap ormap1 = new ORMap("a");
         ORMap ormap2 = new ORMap("b");
 
@@ -133,7 +133,7 @@ public class ORMapTest {
     }
 
     @Test
-    public void testMergeSameOld(){
+    public void testMergeSameOld() {
         ORMap ormap1 = new ORMap("a");
         ORMap ormap2 = new ORMap("b");
 
@@ -145,7 +145,7 @@ public class ORMapTest {
     }
 
     @Test
-    public void testNotRepeated(){
+    public void testNotRepeated() {
         ORMap ormap1 = new ORMap("a");
         ORMap ormap2 = new ORMap("b");
 
@@ -158,7 +158,7 @@ public class ORMapTest {
     }
 
     @Test
-    public void testRepeated(){
+    public void testRepeated() {
         ORMap ormap1 = new ORMap("a");
         ORMap ormap2 = new ORMap("b");
         ORMap ormap3 = new ORMap("c");
@@ -187,17 +187,22 @@ public class ORMapTest {
     }
 
     @Test
-    public void testSameID()
-    {
-        ORMap ormap1 = new ORMap("server");
+    public void testCrdts() {
+        ORMap ormap1 = new ORMap("local");
         ORMap ormap2 = new ORMap("b");
-        ORMap ormap3 = new ORMap("b");
+        ORMap ormap3 = new ORMap("c");
+        ORMap ormap4 = new ORMap("d");
 
-        ormap2.insert("banana");
-        ormap1.join(ormap2);
-        ormap2.value("banana").inc(1);
-        ormap1.join(ormap2);
+        ormap1.put("banana", 1);
+        ormap2.join(ormap1);
         ormap3.join(ormap1);
-    }
+        ormap4.join(ormap1);
 
+        ORMap ormap5 = new ORMap("e");
+
+        ormap5.join(ormap2);
+        ormap5.join(ormap3);
+        ormap5.join(ormap4);
+
+    }
 }

@@ -64,6 +64,7 @@ public class DotKernel {
 
 
     public void join(DotKernel other){
+
         if(this == other) return;
 
         Iterator<Map.Entry<Dot, Integer>> iterator = this.dotMap.entrySet().iterator();
@@ -87,7 +88,6 @@ public class DotKernel {
                 }
             }
         }
-
 
 
         //check the dot with the biggest value in dotMap
@@ -160,6 +160,10 @@ public class DotKernel {
     public void print(){
         System.out.println("Dot map: " + this.dotMap);
         this.context.print();
+    }
+
+    public void isEqual(DotKernel dotKernel){
+
     }
 
 }

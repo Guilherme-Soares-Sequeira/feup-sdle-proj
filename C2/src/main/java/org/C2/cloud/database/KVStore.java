@@ -102,6 +102,8 @@ public class KVStore {
     public void put(String key, String contents) {
         String filepath = this.directory + File.separator + key + ".json";
 
+        System.out.println("[KVSTORE LOG] Inserting a json = " + contents + " and directory = " + directory);
+
         try {
             Path serverPath = Paths.get(this.directory);
             if (!Files.exists(serverPath)) {

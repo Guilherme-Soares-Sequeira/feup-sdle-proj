@@ -111,7 +111,7 @@ public class ORMap {
                 }
             } else { // object in both
                 Dot localDot = this.dotKernel.getDotMap().get(entry.getKey());
-                if (otherDot.isEqual(localDot)) { // same object
+                if (otherDot.equals(localDot)) { // same object
                     this.map.get(entry.getKey()).join(entry.getValue());
                     this.dotKernel.joinContext(other.dotKernel);
                 } else if (this.dotKernel.getContext().containsDot(otherDot)) {  // local object is newer

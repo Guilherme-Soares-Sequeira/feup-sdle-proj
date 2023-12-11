@@ -452,11 +452,22 @@ public class NodeServer extends BaseServer {
 
         }
 
-        ORMap accum = responseList.get(0);
+        ORMap accum = new ORMap(UUID.randomUUID().toString());
 
-        for (int i = 1; i < responseList.size(); i++) {
-            System.out.println();
+        this.logWarning(endpoint, "brand new accum = " + accum.toJson());
+
+        for (int i = 0; i < responseList.size(); i++) {
+            ORMap list = responseList.get(i);
+
+            for (Pair<String, Integer> pair: list.read()) {
+                System.out.println("In accumulator: ");
+                System.out.println("Key : " + pair.getFirst() + " | Value : " + pair.getSecond());
+            }
+
             accum.join(responseList.get(i));
+            this.logWarning(endpoint, "joining with json = " + responseList.get(i).toJson());
+            this.logWarning(endpoint, "result accum = " + accum.toJson());
+
         }
 
 
@@ -667,7 +678,9 @@ public class NodeServer extends BaseServer {
                 Optional<String> localListJsonOpt = this.kvstore.get(listId);
 
                 if (localListJsonOpt.isEmpty()) {
-                    this.kvstore.put(listId, toPutList.toJson());
+                    ORMap newLocalList = new ORMap(UUID.randomUUID().toString());
+                    newLocalList.join(toPutList);
+                    this.kvstore.put(listId, newLocalList.toJson());
 
                 } else {
                     var localList = ORMap.fromJson(localListJsonOpt.get());

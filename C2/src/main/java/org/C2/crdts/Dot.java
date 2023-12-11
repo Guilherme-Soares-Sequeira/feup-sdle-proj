@@ -42,13 +42,26 @@ public class Dot {
         return mapper.readValue(json, Dot.class);
     }
 
-
-    public boolean isEqual(Dot dot) {
-        return (this.replicaID.equals(dot.replicaID) && this.sequenceNumber == dot.sequenceNumber);
-    }
     public void print() {
         System.out.println("Replica ID: " + this.replicaID);
         System.out.println("Sequence Number: " + this.sequenceNumber);
     }
+
+    @Override
+    public int hashCode() {
+        String result = this.replicaID + this.sequenceNumber;
+        return result.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object dot) {
+        if (this == dot) return true;
+        if (dot == null || getClass() != dot.getClass()) return false;
+
+        Dot otherDot = (Dot) dot;
+
+        return (this.replicaID.equals(otherDot.replicaID) && this.sequenceNumber == otherDot.sequenceNumber);
+    }
+
 }
 

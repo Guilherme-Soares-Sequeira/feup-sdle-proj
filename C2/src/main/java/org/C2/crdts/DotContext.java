@@ -13,6 +13,7 @@ public class DotContext {
     private Map<String, Integer> causalContext; // Compact causal context
     private Set<Dot> dotCloud; // Dot cloud
     private final ObjectMapper jsonMapper;
+
     public DotContext() {
         this.causalContext = new HashMap<>();
         this.dotCloud = new HashSet<>();
@@ -88,7 +89,7 @@ public class DotContext {
     }
 
     public void join(DotContext o) {
-        if (o == this) return;
+        if (o.isEquals(this)) return;
 
         for (Map.Entry<String, Integer> entry: o.causalContext.entrySet()){
             Integer selfSequenceNumber = this.causalContext.get(entry.getKey());
@@ -106,6 +107,11 @@ public class DotContext {
 
         compact();
 
+    }
+
+    private boolean isEquals(DotContext dotContext) {
+
+        return false;
     }
 
     public void print() {

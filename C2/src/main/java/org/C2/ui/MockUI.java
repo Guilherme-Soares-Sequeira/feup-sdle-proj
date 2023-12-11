@@ -275,20 +275,31 @@ public class MockUI extends JFrame {
 
         Optional<ORMap> fetchedList = performFetchReadDataRequest();
 
+        System.out.println("Current shopping list: ");
+        for (Pair<String, Integer> entry: sl.read()) {
+            String k = entry.getFirst();
+            int v = entry.getSecond();
+
+            System.out.println("Key: " + k + " | Value: " + v);
+        }
+
         if (fetchedList.isPresent()) {
+            System.out.println("Fetched shopping list: ");
             for (Pair<String, Integer> entry: fetchedList.get().read()) {
                 String k = entry.getFirst();
                 int v = entry.getSecond();
 
-                System.out.println("k: " + k);
-                System.out.println("v: " + v);
+                System.out.println("Key: " + k + " | Value: " + v);
             }
 
             sl.join(fetchedList.get());
 
+            System.out.println("After joining shopping list: ");
             for (Pair<String, Integer> entry: sl.read()) {
                 String k = entry.getFirst();
                 int v = entry.getSecond();
+
+                System.out.println("Key: " + k + " | Value: " + v);
             }
 
             updateItemList();

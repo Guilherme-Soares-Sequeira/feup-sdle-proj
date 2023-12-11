@@ -38,11 +38,6 @@ public class MockUI extends JFrame {
     private JPanel addItemPanel;
     private JPanel itemListPanel;
 
-    // TODO 1: add a 'SAVE' button which stores the current version of the shopping list locally (maybe done)
-    // TODO 2: add a 'CREATE LIST' button which instantiates a new shopping list (maybe done)
-    // TODO 3: add a log message for when the polling for a PULL request is happening (maybe done)
-    // TODO 4: add a log message for errors (PUSH/PULL fails) (maybe done)
-
     public MockUI() {
 
         this.loadUI();
@@ -51,8 +46,8 @@ public class MockUI extends JFrame {
         this.height = 720;
 
         super.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        super.setTitle("Shopping List");
-        super.setSize(1500, 1000);
+        super.setTitle("C2 - Cloud Cart");
+        super.setSize(700, 400);
         super.setLocationRelativeTo(null);
         super.setVisible(true);
     }

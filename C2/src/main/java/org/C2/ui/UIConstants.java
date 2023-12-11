@@ -24,5 +24,4 @@ public record UIConstants() {
     public static final String ICON_PUSH_PATH = "/icons/upload24.png";
     public static final String ICON_SAVE_PATH = "/icons/save24.png";
     public static final String ICON_DELETE_PATH = "/icons/delete16.png";
-
 }

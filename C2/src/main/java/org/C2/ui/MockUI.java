@@ -192,7 +192,7 @@ public class MockUI extends JFrame {
         JScrollPane scrollPane = new JScrollPane(this.itemListPanel);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
-        this.addItemPanel.add(new JLabel("URL = " + this.url));
+        this.addItemPanel.add(new JTextField(this.url));
 
         container.add(scrollPane, BorderLayout.CENTER);
 
@@ -217,6 +217,7 @@ public class MockUI extends JFrame {
         addItemButton.setIcon(new ImageIcon(this.loadIcon(UIConstants.ICON_ADD_PATH)));
         pullButton.setIcon(new ImageIcon(this.loadIcon(UIConstants.ICON_PULL_PATH)));
         pushButton.setIcon(new ImageIcon(this.loadIcon(UIConstants.ICON_PUSH_PATH)));
+        saveButton.setIcon(new ImageIcon(this.loadIcon(UIConstants.ICON_SAVE_PATH)));
 
         addItemButton.addActionListener(e -> this.addItem(itemNameField));
         pushButton.addActionListener(new ActionListener() {
@@ -275,31 +276,25 @@ public class MockUI extends JFrame {
 
         Optional<ORMap> fetchedList = performFetchReadDataRequest();
 
-        System.out.println("Current shopping list: ");
         for (Pair<String, Integer> entry: sl.read()) {
             String k = entry.getFirst();
             int v = entry.getSecond();
 
-            System.out.println("Key: " + k + " | Value: " + v);
         }
 
         if (fetchedList.isPresent()) {
-            System.out.println("Fetched shopping list: ");
             for (Pair<String, Integer> entry: fetchedList.get().read()) {
                 String k = entry.getFirst();
                 int v = entry.getSecond();
 
-                System.out.println("Key: " + k + " | Value: " + v);
             }
 
             sl.join(fetchedList.get());
 
-            System.out.println("After joining shopping list: ");
             for (Pair<String, Integer> entry: sl.read()) {
                 String k = entry.getFirst();
                 int v = entry.getSecond();
 
-                System.out.println("Key: " + k + " | Value: " + v);
             }
 
             updateItemList();
@@ -351,7 +346,6 @@ public class MockUI extends JFrame {
                 continue;
             }
 
-            System.out.println("Finished polling! result = " + result.get().toString());
             return Optional.of(result.get());
         }
 
@@ -402,13 +396,18 @@ public class MockUI extends JFrame {
             JLabel quantityLabel = new JLabel("Quantity: " + quantity);
             JButton incrementButton = this.createButton("+", UIConstants.FONT_MONOSPACED);
             JButton decrementButton = this.createButton("-", UIConstants.FONT_MONOSPACED);
+            JButton deleteButton = this.createButton("X", UIConstants.FONT_MONOSPACED);
+
+            deleteButton.setIcon(new ImageIcon(this.loadIcon(UIConstants.ICON_DELETE_PATH)));
 
             incrementButton.addActionListener(createIncrementActionListener(item));
             decrementButton.addActionListener(createDecrementActionListener(item, quantity));
+            deleteButton.addActionListener(createDeleteActionListener(item));
 
             rightPanel.add(quantityLabel);
             rightPanel.add(incrementButton);
             rightPanel.add(decrementButton);
+            rightPanel.add(deleteButton);
             itemContainer.add(rightPanel, BorderLayout.EAST);
 
             itemContainer.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
@@ -425,14 +424,21 @@ public class MockUI extends JFrame {
 
             currentQuantity.ifPresent(integer -> this.sl.put(itemName, integer + 1));
 
-            updateItemList();
+            this.updateItemList();
         };
     }
 
     private ActionListener createDecrementActionListener(String itemName, int currentQuantity) {
         return e -> {
             this.sl.put(itemName, currentQuantity - 1);
-            updateItemList();
+            this.updateItemList();
+        };
+    }
+
+    private ActionListener createDeleteActionListener(String itemName) {
+        return e -> {
+            this.sl.erase(itemName);
+            this.updateItemList();
         };
     }
 

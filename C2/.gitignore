@@ -45,3 +45,6 @@ bin/
 
 kvstore
 *.log
+
+users/
+kvstore/
